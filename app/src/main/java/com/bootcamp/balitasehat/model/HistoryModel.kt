@@ -5,5 +5,7 @@ data class HistoryModel(
     val umur: String,
     val gender: String,
     val tinggi: String,
-    val berat: String
+    val berat: String,
+    val tanggalLahir: String,
+    val tanggalInput: String
 )

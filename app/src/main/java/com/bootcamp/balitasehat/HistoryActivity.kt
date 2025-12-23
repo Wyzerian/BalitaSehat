@@ -34,24 +34,27 @@ class HistoryActivity : AppCompatActivity() {
 
     private fun loadHistory(): List<HistoryModel> {
         val sharedPref = getSharedPreferences("history_data", MODE_PRIVATE)
-        val jsonString = sharedPref.getString("history_list", "[]") ?: "[]"
+        val jsonString = sharedPref.getString("history_list", "[]")
 
-        val jsonArray = JSONArray(jsonString)
+        val jsonArray = org.json.JSONArray(jsonString)
         val list = mutableListOf<HistoryModel>()
 
-        // 🔥 Dibalik: data TERBARU di atas
-        for (i in jsonArray.length() - 1 downTo 0) {
+        for (i in 0 until jsonArray.length()) {
             val obj = jsonArray.getJSONObject(i)
+
             list.add(
                 HistoryModel(
                     nama = obj.getString("nama"),
                     umur = obj.getString("umur"),
                     gender = obj.getString("gender"),
                     tinggi = obj.getString("tinggi"),
-                    berat = obj.getString("berat")
+                    berat = obj.getString("berat"),
+                    tanggalLahir = obj.getString("tanggal_lahir"),
+                    tanggalInput = obj.getString("tanggal_input")
                 )
             )
         }
         return list
     }
+
 }

@@ -28,7 +28,7 @@ class LoginActivity : AppCompatActivity() {
             // ===============================
             // 📌 DATA DUMMY (SEMENTARA)
             // ===============================
-            val tanggalLahirDummy = "01-01-2024" // < 24 bulan
+            val tanggalLahirDummy = "24-07-2024" // < 24 bulan
             val namaDummy = "Budi"
             val genderDummy = "Laki-laki"
 

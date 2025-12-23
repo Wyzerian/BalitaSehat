@@ -109,6 +109,14 @@ class InputData : AppCompatActivity() {
 
             val gender = findViewById<RadioButton>(selectedGenderId).text.toString()
 
+            // ⏱️ Tanggal & waktu input (otomatis)
+            val tanggalInput = java.text.SimpleDateFormat(
+                "dd-MM-yyyy HH:mm",
+                java.util.Locale.getDefault()
+            ).format(java.util.Date())
+
+
+
             // ===============================
             // SIMPAN HISTORY
             // ===============================
@@ -117,8 +125,10 @@ class InputData : AppCompatActivity() {
                 umur = umur.toString(),
                 gender = gender,
                 tinggi = tinggi.toString(),
-                berat = berat.toString()
+                berat = berat.toString(),
+                tanggalInput = tanggalInput
             )
+
 
             // ===============================
             // SIMPAN DATA TERBARU
@@ -128,8 +138,10 @@ class InputData : AppCompatActivity() {
                 umur = umur.toString(),
                 gender = gender,
                 tinggi = tinggi.toString(),
-                berat = berat.toString()
+                berat = berat.toString(),
+                tanggalInput = tanggalInput
             )
+
 
             // ===============================
             // KE RESULT
@@ -139,6 +151,7 @@ class InputData : AppCompatActivity() {
             intent.putExtra("umur", umur)
             intent.putExtra("gender", gender)
             intent.putExtra("tinggi", tinggi)
+            intent.putExtra("tanggal_input", tanggalInput) // ⭐ INI YANG KURANG
             startActivity(intent)
         }
     }
@@ -168,10 +181,14 @@ class InputData : AppCompatActivity() {
         umur: String,
         gender: String,
         tinggi: String,
-        berat: String
+        berat: String,
+        tanggalInput: String
     ) {
-        val pref = getSharedPreferences("history_data", MODE_PRIVATE)
-        val jsonArray = org.json.JSONArray(pref.getString("history_list", "[]"))
+        val prefHistory = getSharedPreferences("history_data", MODE_PRIVATE)
+        val jsonArray = org.json.JSONArray(prefHistory.getString("history_list", "[]"))
+
+        val prefCurrent = getSharedPreferences("current_data", MODE_PRIVATE)
+        val tanggalLahir = prefCurrent.getString("tanggal_lahir", "-")
 
         val obj = org.json.JSONObject().apply {
             put("nama", nama)
@@ -179,10 +196,14 @@ class InputData : AppCompatActivity() {
             put("gender", gender)
             put("tinggi", tinggi)
             put("berat", berat)
+            put("tanggal_lahir", tanggalLahir)
+            put("tanggal_input", tanggalInput)
         }
 
         jsonArray.put(obj)
-        pref.edit().putString("history_list", jsonArray.toString()).apply()
+        prefHistory.edit()
+            .putString("history_list", jsonArray.toString())
+            .apply()
     }
 
     private fun saveCurrentData(
@@ -190,14 +211,17 @@ class InputData : AppCompatActivity() {
         umur: String,
         gender: String,
         tinggi: String,
-        berat: String
+        berat: String,
+        tanggalInput: String
     ) {
         getSharedPreferences("current_data", MODE_PRIVATE).edit()
             .putString("nama", nama)
-            .putString("umur", umur) // hanya untuk cache tampilan
+            .putString("umur", umur)
             .putString("gender", gender)
             .putString("tinggi", tinggi)
             .putString("berat", berat)
+            .putString("tanggal_input", tanggalInput)
             .apply()
     }
+
 }

@@ -26,6 +26,8 @@ class ResultActivity : AppCompatActivity() {
         val umur = intent.getIntExtra("umur", 0)
         val gender = intent.getStringExtra("gender") ?: ""
         val tinggi = intent.getDoubleExtra("tinggi", 0.0)
+        val tanggalInput = intent.getStringExtra("tanggal_input")
+            ?: if (fromHistory) "-" else "-"
 
         val lms = getLmsWHO(gender, umur)
         val zScore = ((tinggi / lms.m).pow(lms.l) - 1) / (lms.l * lms.s)
@@ -37,18 +39,20 @@ class ResultActivity : AppCompatActivity() {
         }
 
         tvResult.text = """
-            Nama Anak : $nama
-            Umur      : $umur bulan
-            Gender    : $gender
-            Tinggi    : $tinggi cm
+            Nama Anak     : $nama
+            Umur          : $umur bulan
+            Gender        : $gender
+            Tinggi Badan  : $tinggi cm
+            Tanggal Input : $tanggalInput
 
             L = ${lms.l}
             M = ${lms.m}
             S = ${lms.s}
 
-            Z-Score TB/U : ${"%.2f".format(zScore)}
-            Status       : $status
+            Z-Score TB/U  : ${"%.2f".format(zScore)}
+            Status        : $status
         """.trimIndent()
+
 
 
         val zTbList = listOf(
@@ -113,8 +117,6 @@ class ResultActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.tvTitleGrowthBb).text =
             "Grafik Pertumbuhan Berat Badan - $nama"
-
-
 
     }
 

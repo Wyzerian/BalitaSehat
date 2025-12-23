@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,18 +22,27 @@ class MainActivity : AppCompatActivity() {
         // 🔹 Ambil data TERBARU anak (berdasarkan NIK login)
         val pref = getSharedPreferences("current_data", MODE_PRIVATE)
 
-        val nama = pref.getString("nama", "-")
-        val umur = pref.getString("umur", "-")
-        val gender = pref.getString("gender", "-")
-        val tinggi = pref.getString("tinggi", "-")
-        val berat = pref.getString("berat", "-")
+        val nama = pref.getString("nama", "-") ?: "-"
+        val gender = pref.getString("gender", "-") ?: "-"
+        val tanggalLahir = pref.getString("tanggal_lahir", "-") ?: "-"
+        val tinggi = pref.getString("tinggi", "-") ?: "-"
+        val berat = pref.getString("berat", "-") ?: "-"
+
+        // ⭐ HITUNG UMUR OTOMATIS (BULAN)
+        val umurBulan = if (tanggalLahir != "-") {
+            hitungUmurBulan(tanggalLahir)
+        } else {
+            0
+        }
 
         tvNama.text = nama
+
         tvDetail.text = """
-            Umur   : $umur bulan
-            Gender : $gender
-            TB     : $tinggi cm
-            BB     : $berat kg
+            Tanggal Lahir : $tanggalLahir
+            Umur          : $umurBulan bulan
+            Gender        : $gender
+            Tinggi Badan  : $tinggi cm
+            Berat Badan   : $berat kg
         """.trimIndent()
 
         // ➕ Tombol Input / Update Data
@@ -43,5 +54,25 @@ class MainActivity : AppCompatActivity() {
         btnHistory.setOnClickListener {
             startActivity(Intent(this, HistoryActivity::class.java))
         }
+    }
+
+    // ===============================
+    // HITUNG UMUR DARI TANGGAL LAHIR
+    // ===============================
+    private fun hitungUmurBulan(tanggalLahir: String): Int {
+        val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+        val birthDate = sdf.parse(tanggalLahir) ?: return 0
+
+        val calBirth = Calendar.getInstance().apply { time = birthDate }
+        val calNow = Calendar.getInstance()
+
+        var umur = (calNow.get(Calendar.YEAR) - calBirth.get(Calendar.YEAR)) * 12
+        umur += calNow.get(Calendar.MONTH) - calBirth.get(Calendar.MONTH)
+
+        if (calNow.get(Calendar.DAY_OF_MONTH) < calBirth.get(Calendar.DAY_OF_MONTH)) {
+            umur--
+        }
+
+        return umur.coerceAtLeast(0)
     }
 }

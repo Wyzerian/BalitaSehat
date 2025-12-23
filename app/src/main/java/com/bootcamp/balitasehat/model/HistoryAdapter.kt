@@ -28,23 +28,35 @@ class HistoryAdapter(
         val data = listHistory[position]
 
         holder.tvNama.text = data.nama
-        holder.tvDetail.text =
-            "${data.gender} | ${data.umur} bln | TB ${data.tinggi} cm | BB ${data.berat} kg"
+        holder.tvDetail.text = """
+        Tanggal Lahir : ${data.tanggalLahir}
+        Tanggal Input : ${data.tanggalInput}
+        Umur          : ${data.umur} bulan
+        Gender        : ${data.gender}
+        TB            : ${data.tinggi} cm
+        BB            : ${data.berat} kg
+    """.trimIndent()
 
-        // ✅ KLIK → RESULT ACTIVITY
+        // ✅ KLIK → RESULT ACTIVITY (AMAN)
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val intent = Intent(context, ResultActivity::class.java)
 
+            val umur = data.umur.toIntOrNull() ?: 0
+            val tinggi = data.tinggi.toDoubleOrNull() ?: 0.0
+
             intent.putExtra("from_history", true)
             intent.putExtra("nama", data.nama)
-            intent.putExtra("umur", data.umur.toInt())
+            intent.putExtra("umur", umur)
             intent.putExtra("gender", data.gender)
-            intent.putExtra("tinggi", data.tinggi.toDouble())
+            intent.putExtra("tinggi", tinggi)
+            intent.putExtra("tanggal_input", data.tanggalInput) // ✅ WAJIB
 
             context.startActivity(intent)
         }
+
     }
+
 
     override fun getItemCount(): Int = listHistory.size
 }
