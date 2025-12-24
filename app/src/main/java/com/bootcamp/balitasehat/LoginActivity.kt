@@ -1,13 +1,20 @@
 package com.bootcamp.balitasehat
 
-import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import java.util.*
+import com.bootcamp.balitasehat.network.ApiClient
+import com.bootcamp.balitasehat.network.ApiService
+import com.bootcamp.balitasehat.model.CheckNikResponse
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class LoginActivity : AppCompatActivity() {
+
+    private lateinit var apiService: ApiService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -15,34 +22,79 @@ class LoginActivity : AppCompatActivity() {
 
         val etNik = findViewById<EditText>(R.id.etNik)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
+        val btnRegister = findViewById<TextView>(R.id.btnRegister)
+
+        // Retrofit init
+        apiService = ApiClient.apiService
 
         btnLogin.setOnClickListener {
+            val nikInput = etNik.text.toString().trim()
 
-            val nik = etNik.text.toString().trim()
-
-            if (nik != "1234567890123456") {
-                Toast.makeText(this, "NIK tidak terdaftar", Toast.LENGTH_SHORT).show()
+            if (nikInput.isEmpty()) {
+                Toast.makeText(this, "Masukkan NIK", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // ===============================
-            // 📌 DATA DUMMY (SEMENTARA)
-            // ===============================
-            val tanggalLahirDummy = "24-07-2024" // < 24 bulan
-            val namaDummy = "Budi"
-            val genderDummy = "Laki-laki"
+            // 🔄 PANGGIL API CHECK NIK
+            apiService.checkNik(nikInput).enqueue(object : Callback<CheckNikResponse> {
 
-            val pref = getSharedPreferences("current_data", MODE_PRIVATE)
-            pref.edit()
-                .putString("nik", nik)
-                .putString("nama", namaDummy)
-                .putString("gender", genderDummy)
-                .putString("tanggal_lahir", tanggalLahirDummy)
-                .apply()
+                override fun onResponse(
+                    call: Call<CheckNikResponse>,
+                    response: Response<CheckNikResponse>
+                ) {
+                    if (response.isSuccessful && response.body() != null) {
 
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+                        val result = response.body()!!
+
+                        if (result.status == "found") {
+                            // ✅ LOGIN BERHASIL
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "Login berhasil",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                            intent.putExtra("nik", result.data?.nikAnak)
+                            intent.putExtra("nama", result.data?.name)
+                            intent.putExtra("gender", result.data?.gender)
+                            intent.putExtra("birth_date", result.data?.birthDate)
+                            startActivity(intent)
+                            finish()
+
+                        } else {
+                            // ❌ NIK TIDAK DITEMUKAN
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "NIK belum terdaftar, silakan Register",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                    } else {
+                        Log.e("LOGIN_API", "Response error: ${response.errorBody()?.string()}")
+                        Toast.makeText(
+                            this@LoginActivity,
+                            "Gagal login (server error)",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<CheckNikResponse>, t: Throwable) {
+                    Log.e("LOGIN_API", "API gagal", t)
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Tidak dapat terhubung ke server",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
         }
 
+        // ➕ PINDAH KE REGISTER
+        btnRegister.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
+        }
     }
 }

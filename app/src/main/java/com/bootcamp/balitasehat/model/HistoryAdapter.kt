@@ -44,12 +44,14 @@ class HistoryAdapter(
 
             val umur = data.umur.toIntOrNull() ?: 0
             val tinggi = data.tinggi.toDoubleOrNull() ?: 0.0
+            val berat = data.berat.toDoubleOrNull() ?: 0.0
 
             intent.putExtra("from_history", true)
             intent.putExtra("nama", data.nama)
             intent.putExtra("umur", umur)
             intent.putExtra("gender", data.gender)
             intent.putExtra("tinggi", tinggi)
+            intent.putExtra("berat", berat)
             intent.putExtra("tanggal_input", data.tanggalInput) // ✅ WAJIB
 
             context.startActivity(intent)

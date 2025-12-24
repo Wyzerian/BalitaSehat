@@ -33,32 +33,60 @@
             android:layout_marginBottom="16dp"/>
 
         <!-- ===== CARD INFO ANAK ===== -->
+        <!-- ===== CARD INFO ANAK ===== -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_card"
-            android:padding="12dp"
             android:orientation="vertical"
+            android:padding="12dp"
+            android:background="@drawable/bg_card"
             android:layout_marginBottom="12dp">
 
             <TextView
-                android:id="@+id/tvNama"
+                android:id="@+id/tvNamaAnak"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Dinda Nurul Islami"
+                android:text="Nama Anak"
                 android:textStyle="bold"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textColor="@color/black"/>
 
             <TextView
-                android:id="@+id/tvDetail"
+                android:id="@+id/tvUmur"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Usia: 16 bulan • Perempuan\nTinggi: 80 cm • Berat: 14.8 kg"
-                android:textSize="12sp"
-                android:textColor="@color/black"
-                android:layout_marginTop="4dp"/>
+                android:text="Umur : 0 bulan"
+                android:textColor="@color/black"/>
+
+            <TextView
+                android:id="@+id/tvGender"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gender : -"
+                android:textColor="@color/black"/>
+
+            <TextView
+                android:id="@+id/tvTinggi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tinggi : 0 cm"
+                android:textColor="@color/black"/>
+
+            <TextView
+                android:id="@+id/tvBerat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Berat : 0 kg"
+                android:textColor="@color/black"/>
+
+            <TextView
+                android:id="@+id/tvTanggalInput"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tanggal Input : -"
+                android:textColor="@color/black"/>
         </LinearLayout>
+
 
         <!-- ===== PERINGATAN ===== -->
         <LinearLayout

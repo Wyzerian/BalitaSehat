@@ -20,7 +20,7 @@ class HistoryActivity : AppCompatActivity() {
 
         rvHistory.layoutManager = LinearLayoutManager(this)
 
-        val listHistory = loadHistory()
+        val listHistory = loadHistory().reversed()
 
         if (listHistory.isEmpty()) {
             tvEmpty.visibility = TextView.VISIBLE
