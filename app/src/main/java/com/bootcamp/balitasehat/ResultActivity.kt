@@ -11,24 +11,29 @@ import com.github.mikephil.charting.components.XAxis
 import android.graphics.Color
 
 
-class ResultActivity : AppCompatActivity() {
+class    ResultActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_result)
 
-        val tvResult = findViewById<TextView>(R.id.tvResult)
-        val fromHistory = intent.getBooleanExtra("from_history", false)
+        // ===== VIEW =====
+        val tvNama = findViewById<TextView>(R.id.tvNama)
+        val tvDetail = findViewById<TextView>(R.id.tvDetail)
+
         val chartTb = findViewById<LineChart>(R.id.chartTb)
         val chartBb = findViewById<LineChart>(R.id.chartBb)
+        val chartGrowthTB = findViewById<LineChart>(R.id.chartGrowthTB)
+        val chartGrowthBB = findViewById<LineChart>(R.id.chartGrowthBB)
 
-        val nama = intent.getStringExtra("nama") ?: ""
+        // ===== DATA =====
+        val nama = intent.getStringExtra("nama") ?: "-"
         val umur = intent.getIntExtra("umur", 0)
-        val gender = intent.getStringExtra("gender") ?: ""
+        val gender = intent.getStringExtra("gender") ?: "-"
         val tinggi = intent.getDoubleExtra("tinggi", 0.0)
-        val tanggalInput = intent.getStringExtra("tanggal_input")
-            ?: if (fromHistory) "-" else "-"
+        val tanggalInput = intent.getStringExtra("tanggal_input") ?: "-"
 
+        // ===== Z-SCORE =====
         val lms = getLmsWHO(gender, umur)
         val zScore = ((tinggi / lms.m).pow(lms.l) - 1) / (lms.l * lms.s)
 
@@ -38,22 +43,16 @@ class ResultActivity : AppCompatActivity() {
             else -> "Normal"
         }
 
-        tvResult.text = """
-            Nama Anak     : $nama
-            Umur          : $umur bulan
-            Gender        : $gender
-            Tinggi Badan  : $tinggi cm
+        // ===== ISI CARD ATAS =====
+        tvNama.text = nama
+        tvDetail.text = """
+            Umur : $umur bulan • $gender
+            Tinggi : $tinggi cm
             Tanggal Input : $tanggalInput
-
-            L = ${lms.l}
-            M = ${lms.m}
-            S = ${lms.s}
-
-            Z-Score TB/U  : ${"%.2f".format(zScore)}
-            Status        : $status
         """.trimIndent()
 
-
+        // ===== DATA GRAFIK =====
+        val umurList = listOf(0, 1, 2, 3, 6, 9, 12)
 
         val zTbList = listOf(
             hitungZScore(49.9, getLmsWHO(gender, 0)),
@@ -64,25 +63,21 @@ class ResultActivity : AppCompatActivity() {
 
         val zBbList = listOf(0.0, -0.5, -0.3, -0.4)
 
-        val umurList = listOf(0, 1, 2, 3, 6, 9, 12)
-
-// TB (cm)
-        val tbAnak = listOf(50.0, 54.5, 57.8, 61.0, 67.5, 72.0, 75.6)
+        // TB
+        val tbAnak = listOf(50.0, 54.5, 57.8, 61.0, 67.5, 72.0, tinggi)
         val tbMedian = listOf(49.9, 54.7, 57.7, 61.1, 67.6, 72.0, 75.7)
         val tbMinus2 = listOf(46.1, 50.8, 53.7, 56.8, 62.0, 66.5, 68.6)
         val tbMinus3 = listOf(44.2, 48.9, 51.8, 54.7, 59.8, 64.0, 66.4)
 
-// BB (kg)
+        // BB
         val bbAnak = listOf(3.3, 4.2, 5.1, 5.8, 7.5, 8.8, 9.2)
         val bbMedian = listOf(3.3, 4.5, 5.6, 6.4, 7.9, 8.9, 9.6)
         val bbMinus2 = listOf(2.5, 3.4, 4.3, 5.0, 6.4, 7.3, 7.8)
         val bbMinus3 = listOf(2.1, 2.9, 3.7, 4.3, 5.7, 6.5, 6.9)
 
+        // ===== TAMPILKAN GRAFIK =====
         showZScoreTBChart(chartTb, umurList, zTbList)
         showZScoreBBChart(chartBb, umurList, zBbList)
-
-        val chartGrowthTB = findViewById<LineChart>(R.id.chartGrowthTB)
-        val chartGrowthBB = findViewById<LineChart>(R.id.chartGrowthBB)
 
         showGrowthChart(
             chartGrowthTB,
@@ -91,7 +86,7 @@ class ResultActivity : AppCompatActivity() {
             tbMedian,
             tbMinus2,
             tbMinus3,
-            "Budi",
+            nama,
             "Pertumbuhan Tinggi Badan (cm)"
         )
 
@@ -102,22 +97,9 @@ class ResultActivity : AppCompatActivity() {
             bbMedian,
             bbMinus2,
             bbMinus3,
-            "Budi",
+            nama,
             "Pertumbuhan Berat Badan (kg)"
         )
-
-        findViewById<TextView>(R.id.tvTitleZTb).text =
-            "Grafik Z-Score Tinggi Badan (TB/U) - $nama ($gender)"
-
-        findViewById<TextView>(R.id.tvTitleZBb).text =
-            "Grafik Z-Score Berat Badan (BB/U) - $nama ($gender)"
-
-        findViewById<TextView>(R.id.tvTitleGrowthTb).text =
-            "Grafik Pertumbuhan Tinggi Badan - $nama"
-
-        findViewById<TextView>(R.id.tvTitleGrowthBb).text =
-            "Grafik Pertumbuhan Berat Badan - $nama"
-
     }
 
     private fun hitungZScore(tb: Double, lms: LmsData): Double {

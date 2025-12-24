@@ -1,0 +1,22 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- SELECTED -->
+    <item android:state_checked="true">
+        <shape>
+            <solid android:color="#D6ECFF"/>
+            <corners android:radius="24dp"/>
+            <stroke
+                android:width="2dp"
+                android:color="#4F8CFF"/>
+        </shape>
+    </item>
+
+    <!-- NOT SELECTED -->
+    <item>
+        <shape>
+            <solid android:color="#E0E0E0"/>
+            <corners android:radius="24dp"/>
+        </shape>
+    </item>
+
+</selector>

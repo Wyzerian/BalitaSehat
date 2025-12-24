@@ -4,23 +4,66 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp"
-    android:layout_marginBottom="8dp"
+    android:layout_marginBottom="12dp"
     android:background="@drawable/bg_item_history">
 
-    <TextView
-        android:id="@+id/tvNama"
-        android:textColor="#FFFFFF"
-        android:layout_width="wrap_content"
+    <!-- BARIS ATAS: AVATAR + NAMA + STATUS + ICON -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nama Anak"
-        android:textStyle="bold"
-        android:textSize="16sp"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
+        <!-- Avatar -->
+        <TextView
+            android:id="@+id/tvAvatar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_avatar"
+            android:gravity="center"
+            android:text="B"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:textSize="16sp"/>
+
+        <!-- Nama + Status -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+
+            <TextView
+                android:id="@+id/tvNama"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Budi Utomo"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stunting Berat"
+                android:textSize="12sp"
+                android:textColor="@color/red_status"
+                android:background="@drawable/bg_status_red"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- DETAIL BAWAH -->
     <TextView
         android:id="@+id/tvDetail"
-        android:textColor="#CCCCCC"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Detail"
-        android:textSize="14sp"/>
+        android:text="Tanggal: 23 Des 2025\nUsia: 31 bulan | Tinggi: 80 cm | Berat: 14.8 kg"
+        android:textSize="12sp"
+        android:textColor="@color/black"
+        android:layout_marginTop="8dp"/>
+
 </LinearLayout>

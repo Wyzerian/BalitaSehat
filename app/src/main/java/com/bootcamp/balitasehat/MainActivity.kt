@@ -3,10 +3,9 @@ package com.bootcamp.balitasehat
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import java.text.SimpleDateFormat
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -14,65 +13,76 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val tvNama = findViewById<TextView>(R.id.tvNama)
-        val tvDetail = findViewById<TextView>(R.id.tvDetail)
-        val btnInputData = findViewById<Button>(R.id.btnInputData)
-        val btnHistory = findViewById<Button>(R.id.btnHistory)
+        // ===== Header Profil =====
+        val tvNamaAnak = findViewById<TextView>(R.id.tvNamaAnak)
+        val tvSubTitle = findViewById<TextView>(R.id.tvSubtitle)
 
-        // 🔹 Ambil data TERBARU anak (berdasarkan NIK login)
+        // ===== Card Input =====
+        val tvBerat = findViewById<TextView>(R.id.tvBB)
+        val tvTinggi = findViewById<TextView>(R.id.tvTB)
+
+        // ===== Riwayat Pemeriksaan =====
+        val tvLastDate = findViewById<TextView>(R.id.tvLastDate)
+        val tvLastDetail = findViewById<TextView>(R.id.tvLastDetail)
+        val tvLastStatus = findViewById<TextView>(R.id.tvLastStatus)
+
+        // ===== Ambil data terbaru =====
         val pref = getSharedPreferences("current_data", MODE_PRIVATE)
 
-        val nama = pref.getString("nama", "-") ?: "-"
-        val gender = pref.getString("gender", "-") ?: "-"
-        val tanggalLahir = pref.getString("tanggal_lahir", "-") ?: "-"
-        val tinggi = pref.getString("tinggi", "-") ?: "-"
-        val berat = pref.getString("berat", "-") ?: "-"
+        val nama = pref.getString("nama", "-")
+        val umur = pref.getString("umur", "-")
+        val gender = pref.getString("gender", "-")
+        val tinggi = pref.getString("tinggi", "-")
+        val berat = pref.getString("berat", "-")
+        val tanggalInput = pref.getString("tanggal_input", "-")
 
-        // ⭐ HITUNG UMUR OTOMATIS (BULAN)
-        val umurBulan = if (tanggalLahir != "-") {
-            hitungUmurBulan(tanggalLahir)
-        } else {
-            0
+        // ===== Set Header =====
+        tvNamaAnak.text = nama
+        tvSubTitle.text = "Prediksi Stunting Balita Sehat"
+
+        // ===== Set Card Input =====
+        tvBerat.text = "Berat Badan (kg)\n$berat"
+        tvTinggi.text = "Tinggi Badan (cm)\n$tinggi"
+
+        // ===== Set Riwayat Terakhir =====
+        tvLastDate.text = "Tanggal: $tanggalInput"
+        tvLastDetail.text = "Umur: $umur bln | TB: $tinggi cm | BB: $berat kg"
+
+        // Status sederhana (opsional bisa dari z-score)
+        val status = pref.getString("status", "-") ?: "-"
+
+        tvLastStatus.text = "Status: $status"
+
+        when (status) {
+            "Normal" -> {
+                tvLastStatus.setTextColor(getColor(R.color.green_status))
+            }
+            "Berisiko Stunting" -> {
+                tvLastStatus.setTextColor(getColor(R.color.yellow_status))
+            }
+            "Stunting" -> {
+                tvLastStatus.setTextColor(getColor(R.color.red_status))
+            }
+            else -> {
+                tvLastStatus.setTextColor(getColor(android.R.color.darker_gray))
+            }
         }
 
-        tvNama.text = nama
+        // ===== Tombol Input Data (Bottom Nav) =====
+        val navInput = findViewById<TextView>(R.id.navInput)
 
-        tvDetail.text = """
-            Tanggal Lahir : $tanggalLahir
-            Umur          : $umurBulan bulan
-            Gender        : $gender
-            Tinggi Badan  : $tinggi cm
-            Berat Badan   : $berat kg
-        """.trimIndent()
-
-        // ➕ Tombol Input / Update Data
-        btnInputData.setOnClickListener {
-            startActivity(Intent(this, InputData::class.java))
+        navInput.setOnClickListener {
+            val intent = Intent(this, InputData::class.java)
+            startActivity(intent)
         }
 
-        // 📜 Tombol Lihat History
-        btnHistory.setOnClickListener {
-            startActivity(Intent(this, HistoryActivity::class.java))
-        }
-    }
+        // ===== Tombol Riwayat (Bottom Nav) =====
+        val navHistory = findViewById<TextView>(R.id.navHistory)
 
-    // ===============================
-    // HITUNG UMUR DARI TANGGAL LAHIR
-    // ===============================
-    private fun hitungUmurBulan(tanggalLahir: String): Int {
-        val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-        val birthDate = sdf.parse(tanggalLahir) ?: return 0
-
-        val calBirth = Calendar.getInstance().apply { time = birthDate }
-        val calNow = Calendar.getInstance()
-
-        var umur = (calNow.get(Calendar.YEAR) - calBirth.get(Calendar.YEAR)) * 12
-        umur += calNow.get(Calendar.MONTH) - calBirth.get(Calendar.MONTH)
-
-        if (calNow.get(Calendar.DAY_OF_MONTH) < calBirth.get(Calendar.DAY_OF_MONTH)) {
-            umur--
+        navHistory.setOnClickListener {
+            val intent = Intent(this, HistoryActivity::class.java)
+            startActivity(intent)
         }
 
-        return umur.coerceAtLeast(0)
     }
 }
