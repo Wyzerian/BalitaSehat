@@ -151,6 +151,7 @@ class InputData : AppCompatActivity() {
             intent.putExtra("umur", umur)
             intent.putExtra("gender", gender)
             intent.putExtra("tinggi", tinggi)
+            intent.putExtra("berat", berat)
             intent.putExtra("tanggal_input", tanggalInput) // ⭐ INI YANG KURANG
             startActivity(intent)
         }
