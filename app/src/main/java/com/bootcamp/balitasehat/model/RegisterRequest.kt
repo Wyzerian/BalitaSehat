@@ -21,6 +21,12 @@ data class ChildData(
     @SerializedName("created_at") val createdAt: String
 )
 
+data class ChildResult(
+    @SerializedName("child_id") val childId: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("age_months") val ageMonths: Int
+)
+
 // ============================================================================
 // REGISTER CHILD
 // ============================================================================
@@ -53,29 +59,41 @@ data class RegisteredChild(
 data class AddMeasurementRequest(
     @SerializedName("nik_anak") val nikAnak: String,
     @SerializedName("height_cm") val heightCm: Double,
-    @SerializedName("weight_kg") val weightKg: Double
+    @SerializedName("weight_kg") val weightKg: Double,
+    @SerializedName("measurement_date") val measurementDate: String
 )
 
 data class AddMeasurementResponse(
     @SerializedName("status") val status: String,
     @SerializedName("message") val message: String,
-    @SerializedName("data") val data: MeasurementData?
+    @SerializedName("data") val data: MeasurementResult?
 )
 
-data class MeasurementData(
+data class MeasurementResult(
     @SerializedName("measurement_id") val measurementId: Int,
-    @SerializedName("child_id") val childId: String,
-    @SerializedName("age_months") val ageMonths: Int,
+    @SerializedName("child") val child: ChildResult,
+    @SerializedName("measurement") val measurement: MeasurementResultData,
+    @SerializedName("classification") val classification: ClassificationResult,
+    @SerializedName("chart_urls") val chartUrls: ChartUrls
+)
+
+data class MeasurementResultData(
     @SerializedName("height_cm") val heightCm: Double,
     @SerializedName("weight_kg") val weightKg: Double,
-    @SerializedName("classification") val classification: Classification
+    @SerializedName("measurement_date") val measurementDate: String
 )
 
-data class Classification(
-    @SerializedName("height_status") val heightStatus: String,
-    @SerializedName("weight_status") val weightStatus: String,
+data class ClassificationResult(
     @SerializedName("height_zscore") val heightZscore: Double,
-    @SerializedName("weight_zscore") val weightZscore: Double
+    @SerializedName("weight_zscore") val weightZscore: Double,
+    @SerializedName("classification_height") val classificationHeight: String,
+    @SerializedName("classification_weight") val classificationWeight: String,
+    @SerializedName("risk_level") val riskLevel: String
+)
+
+data class ChartUrls(
+    @SerializedName("growth") val growth: String,
+    @SerializedName("zscore") val zscore: String
 )
 
 // ============================================================================
@@ -85,20 +103,19 @@ data class Classification(
 data class HistoryResponse(
     @SerializedName("status") val status: String,
     @SerializedName("child_id") val childId: String,
-    @SerializedName("name") val name: String,
-    @SerializedName("gender") val gender: String,
-    @SerializedName("birth_date") val birthDate: String,
-    @SerializedName("measurements") val measurements: List<Measurement>
+    @SerializedName("total_measurements") val totalMeasurements: Int,
+    @SerializedName("data") val data: List<HistoryItem>
 )
 
-data class Measurement(
-    @SerializedName("measurement_id") val measurementId: Int,
-    @SerializedName("date") val date: String,
+data class HistoryItem(
+    @SerializedName("measurement_date") val measurementDate: String,
     @SerializedName("age_months") val ageMonths: Int,
     @SerializedName("height_cm") val heightCm: Double,
     @SerializedName("weight_kg") val weightKg: Double,
-    @SerializedName("height_category") val heightCategory: String,
-    @SerializedName("weight_category") val weightCategory: String,
-    @SerializedName("height_zscore") val heightZscore: Double?,
-    @SerializedName("weight_zscore") val weightZscore: Double?
+
+    @SerializedName("zscore_height") val zscoreHeight: Double,
+    @SerializedName("zscore_weight") val zscoreWeight: Double,
+
+    @SerializedName("stunting_status") val stuntingStatus: String?,
+    @SerializedName("wasting_status") val wastingStatus: String
 )

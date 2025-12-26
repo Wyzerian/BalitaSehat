@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
@@ -23,23 +22,19 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Detail Riwayat"
+            android:text="Hasil Analisis"
             android:textStyle="bold"
             android:textSize="18sp"
             android:textColor="@color/black"
-            android:background="@drawable/bg_title_red"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="6dp"
             android:layout_marginBottom="16dp"/>
 
-        <!-- ===== CARD INFO ANAK ===== -->
-        <!-- ===== CARD INFO ANAK ===== -->
+        <!-- ===== INFO ANAK ===== -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
             android:orientation="vertical"
             android:padding="12dp"
-            android:background="@drawable/bg_card"
             android:layout_marginBottom="12dp">
 
             <TextView
@@ -56,13 +51,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Umur : 0 bulan"
-                android:textColor="@color/black"/>
-
-            <TextView
-                android:id="@+id/tvGender"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Gender : -"
                 android:textColor="@color/black"/>
 
             <TextView
@@ -87,9 +75,9 @@
                 android:textColor="@color/black"/>
         </LinearLayout>
 
-
-        <!-- ===== PERINGATAN ===== -->
+        <!-- ===== STATUS ===== -->
         <LinearLayout
+            android:id="@+id/layoutStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_warning"
@@ -98,134 +86,58 @@
             android:layout_marginBottom="12dp">
 
             <TextView
-                android:text="⚠ PERINGATAN TINGGI"
+                android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Status Gizi"
                 android:textStyle="bold"
                 android:textColor="@color/red_status"/>
 
             <TextView
-                android:text="Anak mengalami stunting berat. Segera konsultasikan ke tenaga kesehatan untuk pemeriksaan lebih lanjut."
-                android:textSize="12sp"
+                android:id="@+id/tvZScore"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Z-Score"
                 android:textColor="@color/black"
-                android:layout_marginTop="4dp"/>
-        </LinearLayout>
-
-        <!-- ===== STATUS GIZI ===== -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_card"
-            android:padding="12dp"
-            android:orientation="vertical"
-            android:layout_marginBottom="12dp">
-
-            <TextView
-                android:text="Status Gizi"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textStyle="bold"
-                android:textColor="@color/black"/>
-
-            <TextView
-                android:text="Tinggi Badan / Umur (TB/U): Stunting Berat (Z = -4.27)\nBerat Badan / Umur (BB/U): Normal (Z = 0.11)"
-                android:textSize="12sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/black"
-                android:layout_marginTop="6dp"/>
-        </LinearLayout>
-
-        <!-- ===== INTERPRETASI ===== -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_card"
-            android:padding="12dp"
-            android:orientation="vertical"
-            android:layout_marginBottom="12dp">
-
-            <TextView
-                android:text="Interpretasi Z-Score"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textStyle="bold"
-                android:textColor="@color/black"/>
-
-            <TextView
-                android:text="• Z &lt; -3 : Stunting Berat
-• -3 ≤ Z &lt; -2 : Stunting
-• -2 ≤ Z &lt; -1 : Risiko
-• Z ≥ -1 : Normal"
-                android:textSize="12sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/black"
-                android:layout_marginTop="6dp"/>
+                android:textSize="12sp"/>
         </LinearLayout>
 
         <!-- ===== GRAFIK Z-SCORE ===== -->
         <TextView
-            android:id="@+id/tvTitleZTb"
+            android:text="Grafik Z-Score"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Grafik Z-Score Tinggi Badan (TB/U)"
             android:textStyle="bold"
             android:textColor="@color/black"
             android:layout_marginBottom="6dp"/>
 
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/chartTb"
+        <ImageView
+            android:id="@+id/imgZscoreChart"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tvTitleZBb"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Grafik Z-Score Berat Badan (BB/U)"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:layout_marginBottom="6dp"/>
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:contentDescription="Grafik Z-Score"/>
 
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/chartBb"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginBottom="12dp"/>
 
         <!-- ===== GRAFIK PERTUMBUHAN ===== -->
         <TextView
-            android:id="@+id/tvTitleGrowthTb"
+            android:text="Grafik Pertumbuhan"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Grafik Pertumbuhan Tinggi Badan"
             android:textStyle="bold"
             android:textColor="@color/black"
             android:layout_marginBottom="6dp"/>
 
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/chartGrowthTB"
+        <ImageView
+            android:id="@+id/imgGrowthChart"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tvTitleGrowthBb"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Grafik Pertumbuhan Berat Badan"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:layout_marginBottom="6dp"/>
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="Grafik Pertumbuhan"/>
 
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/chartGrowthBB"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"/>
 
     </LinearLayout>
 </ScrollView>

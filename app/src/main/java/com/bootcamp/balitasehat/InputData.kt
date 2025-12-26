@@ -1,11 +1,21 @@
 package com.bootcamp.balitasehat
 
+import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import java.text.SimpleDateFormat
-import java.util.*
+import com.bootcamp.balitasehat.model.AddMeasurementRequest
+import com.bootcamp.balitasehat.model.AddMeasurementResponse
+import com.bootcamp.balitasehat.network.ApiClient
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.time.LocalDate
+import java.util.Calendar
 
 class InputData : AppCompatActivity() {
 
@@ -13,216 +23,147 @@ class InputData : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_input_data)
 
+        Log.d("INPUT_DATA", "InputData dibuka")
+
+        // ===== VIEW =====
         val etNama = findViewById<EditText>(R.id.etNama)
-        val etUmur = findViewById<EditText>(R.id.etUmur)
+        val etTanggal = findViewById<EditText>(R.id.etTanggal)
         val etTinggi = findViewById<EditText>(R.id.etTinggi)
         val etBerat = findViewById<EditText>(R.id.etBerat)
-        val rgGender = findViewById<RadioGroup>(R.id.rgGender)
         val btnProses = findViewById<Button>(R.id.btnProses)
 
-        // 🔒 Umur TIDAK bisa diedit (selalu otomatis)
-        etUmur.isEnabled = false
+        // ===== DATA DARI MAIN =====
+        val nikAnak = intent.getStringExtra("nik_anak")
+        val namaAnak = intent.getStringExtra("nama_anak")
 
-        val fromHistory = intent.getBooleanExtra("from_history", false)
-
-        if (fromHistory) {
-            // ===============================
-            // DATA DARI HISTORY (READ-ONLY)
-            // ===============================
-            etNama.setText(intent.getStringExtra("nama") ?: "")
-            etUmur.setText(intent.getStringExtra("umur") ?: "")
-            etTinggi.setText(intent.getStringExtra("tinggi") ?: "")
-            etBerat.setText(intent.getStringExtra("berat") ?: "")
-
-            when (intent.getStringExtra("gender")) {
-                "Laki-laki" -> rgGender.check(R.id.rbLaki)
-                "Perempuan" -> rgGender.check(R.id.rbPerempuan)
-            }
-        } else {
-            // ===============================
-            // DATA TERBARU (DARI LOGIN)
-            // ===============================
-            val pref = getSharedPreferences("current_data", MODE_PRIVATE)
-
-            val nama = pref.getString("nama", "")
-            val tanggalLahir = pref.getString("tanggal_lahir", "")
-            val tinggi = pref.getString("tinggi", "")
-            val berat = pref.getString("berat", "")
-            val gender = pref.getString("gender", "")
-
-            etNama.setText(nama)
-
-            // ⭐ HITUNG UMUR OTOMATIS DARI TANGGAL LAHIR
-            if (!tanggalLahir.isNullOrEmpty()) {
-                val umurBulan = hitungUmurBulan(tanggalLahir)
-                etUmur.setText(umurBulan.toString())
-            }
-
-            etTinggi.setText(tinggi)
-            etBerat.setText(berat)
-
-            when (gender) {
-                "Laki-laki" -> rgGender.check(R.id.rbLaki)
-                "Perempuan" -> rgGender.check(R.id.rbPerempuan)
-            }
+        if (nikAnak.isNullOrEmpty()) {
+            Toast.makeText(this, "NIK anak tidak ditemukan", Toast.LENGTH_SHORT).show()
+            finish()
+            return
         }
 
-        // 🔒 Nama selalu terkunci
+        // ===== SET NAMA OTOMATIS =====
+        etNama.setText(namaAnak ?: "-")
         etNama.isEnabled = false
 
+        // ===== DATE PICKER =====
+        etTanggal.setOnClickListener {
+            val cal = Calendar.getInstance()
+            DatePickerDialog(
+                this,
+                { _, year, month, day ->
+                    val date = LocalDate.of(year, month + 1, day)
+                    etTanggal.setText(date.toString())
+                },
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
+            ).show()
+        }
+
+        // ===== SUBMIT =====
         btnProses.setOnClickListener {
 
-            val nama = etNama.text.toString().trim()
-            val umurStr = etUmur.text.toString().trim()
-            val tinggiStr = etTinggi.text.toString().trim()
-            val beratStr = etBerat.text.toString().trim()
+            val tinggi = etTinggi.text.toString().toDoubleOrNull()
+            val berat = etBerat.text.toString().toDoubleOrNull()
+            val tanggal = etTanggal.text.toString()
 
-            if (umurStr.isEmpty() || tinggiStr.isEmpty() || beratStr.isEmpty()) {
-                Toast.makeText(this, "Data belum lengkap!", Toast.LENGTH_SHORT).show()
+            if (tinggi == null || berat == null || tanggal.isEmpty()) {
+                Toast.makeText(this, "Data belum lengkap", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val selectedGenderId = rgGender.checkedRadioButtonId
-            if (selectedGenderId == -1) {
-                Toast.makeText(this, "Pilih jenis kelamin!", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val umur = umurStr.toIntOrNull()
-            val tinggi = tinggiStr.toDoubleOrNull()
-            val berat = beratStr.toDoubleOrNull()
-
-            if (umur == null || umur !in 0..24) {
-                Toast.makeText(this, "Umur tidak valid (0–24 bulan)", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (tinggi == null || tinggi <= 0) {
-                Toast.makeText(this, "Tinggi badan tidak valid (cm)", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (berat == null || berat <= 0) {
-                Toast.makeText(this, "Berat badan tidak valid (kg)", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val gender = findViewById<RadioButton>(selectedGenderId).text.toString()
-
-            // ⏱️ Tanggal & waktu input (otomatis)
-            val tanggalInput = java.text.SimpleDateFormat(
-                "dd-MM-yyyy HH:mm",
-                java.util.Locale.getDefault()
-            ).format(java.util.Date())
-
-
-
-            // ===============================
-            // SIMPAN HISTORY
-            // ===============================
-            saveToHistory(
-                nama = nama,
-                umur = umur.toString(),
-                gender = gender,
-                tinggi = tinggi.toString(),
-                berat = berat.toString(),
-                tanggalInput = tanggalInput
+            val request = AddMeasurementRequest(
+                nikAnak = nikAnak,
+                heightCm = tinggi,
+                weightKg = berat,
+                measurementDate = tanggal
             )
 
+            ApiClient.apiService.addMeasurement(request)
+                .enqueue(object : Callback<AddMeasurementResponse> {
 
-            // ===============================
-            // SIMPAN DATA TERBARU
-            // ===============================
-            saveCurrentData(
-                nama = nama,
-                umur = umur.toString(),
-                gender = gender,
-                tinggi = tinggi.toString(),
-                berat = berat.toString(),
-                tanggalInput = tanggalInput
-            )
+                    override fun onResponse(
+                        call: Call<AddMeasurementResponse>,
+                        response: Response<AddMeasurementResponse>
+                    ) {
+                        val result = response.body()?.data ?: run {
+                            Toast.makeText(
+                                this@InputData,
+                                "Gagal memproses data",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return
+                        }
 
+                        val childId = result.child.childId
 
-            // ===============================
-            // KE RESULT
-            // ===============================
-            val intent = Intent(this, ResultActivity::class.java)
-            intent.putExtra("nama", nama)
-            intent.putExtra("umur", umur)
-            intent.putExtra("gender", gender)
-            intent.putExtra("tinggi", tinggi)
-            intent.putExtra("berat", berat)
-            intent.putExtra("tanggal_input", tanggalInput) // ⭐ INI YANG KURANG
-            startActivity(intent)
+                        // 🔄 TRIGGER GENERATE CHART (NON-BLOCKING)
+                        ApiClient.apiService.generateChart(childId, "growth")
+                            .enqueue(SimpleCallback())
+                        ApiClient.apiService.generateChart(childId, "zscore")
+                            .enqueue(SimpleCallback())
+
+                        // 🔀 PINDAH KE RESULT
+                        val intent = Intent(this@InputData, ResultActivity::class.java)
+
+                        // ===== CHILD =====
+                        intent.putExtra("nama", result.child.name)
+                        intent.putExtra("age_months", result.child.ageMonths)
+                        intent.putExtra("child_id", childId)
+
+                        // ===== MEASUREMENT =====
+                        intent.putExtra("height_cm", result.measurement.heightCm)
+                        intent.putExtra("weight_kg", result.measurement.weightKg)
+                        intent.putExtra("measurement_date", result.measurement.measurementDate)
+
+                        // ===== CLASSIFICATION (HASIL BACKEND) =====
+                        intent.putExtra("height_zscore", result.classification.heightZscore)
+                        intent.putExtra("weight_zscore", result.classification.weightZscore)
+                        intent.putExtra("height_status", result.classification.classificationHeight)
+                        intent.putExtra("weight_status", result.classification.classificationWeight)
+                        intent.putExtra("risk_level", result.classification.riskLevel)
+
+                        // ===== CHART URL (STATIC FILE) =====
+                        intent.putExtra(
+                            "chart_growth",
+                            "http://144.208.67.53:8000/static/charts/${childId}_growth.png"
+                        )
+                        intent.putExtra(
+                            "chart_zscore",
+                            "http://144.208.67.53:8000/static/charts/${childId}_zscore.png"
+                        )
+
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            startActivity(intent)
+                            finish()
+                        }, 800)
+
+                    }
+
+                    override fun onFailure(
+                        call: Call<AddMeasurementResponse>,
+                        t: Throwable
+                    ) {
+                        Log.e("INPUT_DATA", "API gagal", t)
+                        Toast.makeText(
+                            this@InputData,
+                            "Gagal terhubung ke server",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                })
         }
     }
+}
 
-    // ===============================
-    // HITUNG UMUR DARI TANGGAL LAHIR
-    // ===============================
-    private fun hitungUmurBulan(tanggalLahir: String): Int {
-        val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-        val birthDate = sdf.parse(tanggalLahir) ?: return 0
-
-        val calBirth = Calendar.getInstance().apply { time = birthDate }
-        val calNow = Calendar.getInstance()
-
-        var umur = (calNow.get(Calendar.YEAR) - calBirth.get(Calendar.YEAR)) * 12
-        umur += calNow.get(Calendar.MONTH) - calBirth.get(Calendar.MONTH)
-
-        if (calNow.get(Calendar.DAY_OF_MONTH) < calBirth.get(Calendar.DAY_OF_MONTH)) {
-            umur--
-        }
-
-        return umur.coerceAtLeast(0)
+// ===== SIMPLE CALLBACK UNTUK GENERATE CHART =====
+class SimpleCallback : Callback<Void> {
+    override fun onResponse(call: Call<Void>, response: Response<Void>) {
+        Log.d("CHART", "Chart generated")
     }
 
-    private fun saveToHistory(
-        nama: String,
-        umur: String,
-        gender: String,
-        tinggi: String,
-        berat: String,
-        tanggalInput: String
-    ) {
-        val prefHistory = getSharedPreferences("history_data", MODE_PRIVATE)
-        val jsonArray = org.json.JSONArray(prefHistory.getString("history_list", "[]"))
-
-        val prefCurrent = getSharedPreferences("current_data", MODE_PRIVATE)
-        val tanggalLahir = prefCurrent.getString("tanggal_lahir", "-")
-
-        val obj = org.json.JSONObject().apply {
-            put("nama", nama)
-            put("umur", umur)
-            put("gender", gender)
-            put("tinggi", tinggi)
-            put("berat", berat)
-            put("tanggal_lahir", tanggalLahir)
-            put("tanggal_input", tanggalInput)
-        }
-
-        jsonArray.put(obj)
-        prefHistory.edit()
-            .putString("history_list", jsonArray.toString())
-            .apply()
+    override fun onFailure(call: Call<Void>, t: Throwable) {
+        Log.e("CHART", "Generate chart gagal", t)
     }
-
-    private fun saveCurrentData(
-        nama: String,
-        umur: String,
-        gender: String,
-        tinggi: String,
-        berat: String,
-        tanggalInput: String
-    ) {
-        getSharedPreferences("current_data", MODE_PRIVATE).edit()
-            .putString("nama", nama)
-            .putString("umur", umur)
-            .putString("gender", gender)
-            .putString("tinggi", tinggi)
-            .putString("berat", berat)
-            .putString("tanggal_input", tanggalInput)
-            .apply()
-    }
-
 }
