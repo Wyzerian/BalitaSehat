@@ -107,6 +107,20 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // ===== NAV LOGOUT =====
+        findViewById<TextView>(R.id.navLogout).setOnClickListener {
+            // Clear semua data session
+            prefs.edit().clear().apply()
+
+            // Pindah ke LoginActivity
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+
+            Toast.makeText(this, "Berhasil logout", Toast.LENGTH_SHORT).show()
+        }
+
         // ===== NAV INPUT =====
         findViewById<TextView>(R.id.navInput).setOnClickListener {
 
@@ -267,6 +281,21 @@ class MainActivity : AppCompatActivity() {
 
         Log.d("MAIN_CHART", "Loading growth chart: $growthChartUrl")
         Log.d("MAIN_CHART", "Loading zscore chart: $zscoreChartUrl")
+
+        // ===== CLICK LISTENER UNTUK GRAFIK (FULL-SCREEN VIEWER) =====
+        imgChartTB.setOnClickListener {
+            val intent = Intent(this, ImageViewerActivity::class.java)
+            intent.putExtra("image_url", growthChartUrl)
+            intent.putExtra("image_title", "Grafik Pertumbuhan Tinggi Badan")
+            startActivity(intent)
+        }
+
+        imgChartBB.setOnClickListener {
+            val intent = Intent(this, ImageViewerActivity::class.java)
+            intent.putExtra("image_url", zscoreChartUrl)
+            intent.putExtra("image_title", "Grafik Pertumbuhan Berat Badan")
+            startActivity(intent)
+        }
 
         // Load Growth Chart (Tinggi Badan)
         Glide.with(this)

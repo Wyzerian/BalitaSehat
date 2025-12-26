@@ -25,6 +25,11 @@ class InputData : AppCompatActivity() {
 
         Log.d("INPUT_DATA", "InputData dibuka")
 
+        // ===== TOMBOL BACK =====
+        findViewById<ImageView>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
+
         // ===== VIEW =====
         val etNama = findViewById<EditText>(R.id.etNama)
         val etTanggal = findViewById<EditText>(R.id.etTanggal)

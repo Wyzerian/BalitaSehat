@@ -27,6 +27,13 @@ class RegisterActivity : AppCompatActivity() {
         val etTanggalLahir = findViewById<EditText>(R.id.etTanggalLahir)
         val rgGender = findViewById<RadioGroup>(R.id.rgGender)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
+        val tvLogin = findViewById<TextView>(R.id.tvLogin)
+
+        // 🔗 LINK KE LOGIN
+        tvLogin.setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+        }
 
         // 📅 Date Picker
         etTanggalLahir.setOnClickListener {

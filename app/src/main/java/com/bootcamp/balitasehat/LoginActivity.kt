@@ -17,6 +17,9 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var apiService: ApiService
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Set theme normal sebelum super.onCreate() untuk mengganti splash screen
+        setTheme(R.style.Theme_BalitaSehat)
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 

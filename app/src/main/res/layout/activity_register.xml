@@ -13,9 +13,10 @@
 
         <!-- LOGO -->
         <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/ic_balita_logo"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:src="@drawable/ic_logo_balitasehat"
+            android:scaleType="fitCenter"
             android:layout_marginBottom="12dp" />
 
         <!-- TITLE -->
@@ -133,7 +134,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Sudah punya akun? Masuk"
-            android:textColor="@color/black"
+            android:textColor="#2196F3"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
             android:layout_marginTop="16dp"/>
 
     </LinearLayout>
