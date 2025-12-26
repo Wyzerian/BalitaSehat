@@ -43,16 +43,6 @@
                 android:textColor="@color/black"
                 android:textSize="14sp"/>
 
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Stunting Berat"
-                android:textSize="12sp"
-                android:textColor="@color/red_status"
-                android:background="@drawable/bg_status_red"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="2dp"/>
         </LinearLayout>
     </LinearLayout>
 

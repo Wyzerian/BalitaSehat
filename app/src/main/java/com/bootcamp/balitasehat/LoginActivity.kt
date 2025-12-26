@@ -46,7 +46,48 @@ class LoginActivity : AppCompatActivity() {
 
                         val result = response.body()!!
 
+                        // 🔍 DEBUG: Log API Response
+                        Log.d("LOGIN_API", "=== API RESPONSE DEBUG ===")
+                        Log.d("LOGIN_API", "Status: ${result.status}")
+                        Log.d("LOGIN_API", "Data: ${result.data}")
+                        Log.d("LOGIN_API", "child_id: ${result.data?.childId}")
+                        Log.d("LOGIN_API", "nik_anak: ${result.data?.nikAnak}")
+                        Log.d("LOGIN_API", "nama: ${result.data?.name}")
+                        Log.d("LOGIN_API", "gender: ${result.data?.gender}")
+                        Log.d("LOGIN_API", "birth_date: ${result.data?.birthDate}")
+
                         if (result.status == "found") {
+
+                            // ⚠️ CRITICAL: Check if child_id exists
+                            val childId = result.data?.childId
+                            if (childId.isNullOrEmpty()) {
+                                Log.e("LOGIN_API", "⚠️ child_id is NULL from backend!")
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    "Error: child_id tidak ditemukan di server. Hubungi admin.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                return
+                            }
+
+                            val prefs = getSharedPreferences("USER", MODE_PRIVATE)
+
+                            // ✅ CLEAR data user sebelumnya
+                            prefs.edit().clear().apply()
+
+                            // ✅ Simpan data user baru
+                            prefs.edit()
+                                .putString("child_id", childId)
+                                .putString("nik_anak", result.data?.nikAnak)
+                                .putString("nama", result.data?.name)
+                                .apply()
+
+                            // 🔍 Verify data saved
+                            Log.d("LOGIN_API", "=== SAVED TO SHAREDPREFERENCES ===")
+                            Log.d("LOGIN_API", "child_id: ${prefs.getString("child_id", null)}")
+                            Log.d("LOGIN_API", "nik_anak: ${prefs.getString("nik_anak", null)}")
+                            Log.d("LOGIN_API", "nama: ${prefs.getString("nama", null)}")
+
                             // ✅ LOGIN BERHASIL
                             Toast.makeText(
                                 this@LoginActivity,
@@ -56,6 +97,7 @@ class LoginActivity : AppCompatActivity() {
 
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
                             intent.putExtra("nik_anak", result.data?.nikAnak)
+                            intent.putExtra("child_id", childId)
                             intent.putExtra("nama", result.data?.name)
                             intent.putExtra("gender", result.data?.gender)
                             intent.putExtra("birth_date", result.data?.birthDate)
