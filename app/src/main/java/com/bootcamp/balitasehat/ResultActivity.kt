@@ -154,13 +154,20 @@ class ResultActivity : AppCompatActivity() {
         )
 
         imgGrowth.postDelayed({
-            Glide.with(this)
-                .load(growthUrl)
-                .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .placeholder(R.drawable.ic_loading)
-                .error(R.drawable.ic_error)
-                .into(imgGrowth)
+            // ⚠️ Safety check: Jangan load jika activity sedang finishing/destroyed
+            if (!isFinishing && !isDestroyed) {
+                try {
+                    Glide.with(this)
+                        .load(growthUrl)
+                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .placeholder(R.drawable.ic_loading)
+                        .error(R.drawable.ic_error)
+                        .into(imgGrowth)
+                } catch (e: Exception) {
+                    Log.e("RESULT", "Failed to load growth chart", e)
+                }
+            }
         }, 1500)
 
         // ===== FALLBACK: Load dari API jika Intent data kosong =====
@@ -252,16 +259,27 @@ class ResultActivity : AppCompatActivity() {
         retry: Int = 3,
         delayMs: Long = 1200
     ) {
-        Glide.with(imageView)
-            .load(url)
-            .skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .placeholder(R.drawable.ic_loading)
-            .error(R.drawable.ic_loading) // jangan langsung error
-            .into(imageView)
+        // ⚠️ Safety check: Jangan load jika activity sedang finishing/destroyed
+        if (isFinishing || isDestroyed) {
+            Log.w("Z_SCORE", "Activity is finishing/destroyed, skipping chart load")
+            return
+        }
+
+        try {
+            Glide.with(imageView)
+                .load(url)
+                .skipMemoryCache(true)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .placeholder(R.drawable.ic_loading)
+                .error(R.drawable.ic_loading) // jangan langsung error
+                .into(imageView)
+        } catch (e: Exception) {
+            Log.e("Z_SCORE", "Failed to load zscore chart", e)
+            return
+        }
 
         imageView.postDelayed({
-            if (retry > 0) {
+            if (!isFinishing && !isDestroyed && retry > 0) {
                 Log.d("Z_SCORE", "Retry load zscore chart, remaining=$retry")
                 loadZScoreChartWithRetry(
                     imageView,

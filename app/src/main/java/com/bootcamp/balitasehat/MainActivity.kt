@@ -148,6 +148,11 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
+        // ⚠️ Check jika activity masih hidup sebelum load data
+        if (isFinishing || isDestroyed) {
+            return
+        }
+
         // Refresh data saat kembali dari InputData
         val childId = prefs.getString("child_id", null)
         if (!childId.isNullOrEmpty()) {
@@ -273,6 +278,12 @@ class MainActivity : AppCompatActivity() {
         imgChartTB: ImageView,
         imgChartBB: ImageView
     ) {
+        // ⚠️ Safety check: Jangan load jika activity sedang finishing/destroyed
+        if (isFinishing || isDestroyed) {
+            Log.w("MAIN_CHART", "Activity is finishing/destroyed, skipping chart load")
+            return
+        }
+
         val timestamp = System.currentTimeMillis()
 
         // URL untuk grafik growth (tinggi badan) dan zscore (berat badan)
@@ -284,36 +295,48 @@ class MainActivity : AppCompatActivity() {
 
         // ===== CLICK LISTENER UNTUK GRAFIK (FULL-SCREEN VIEWER) =====
         imgChartTB.setOnClickListener {
-            val intent = Intent(this, ImageViewerActivity::class.java)
-            intent.putExtra("image_url", growthChartUrl)
-            intent.putExtra("image_title", "Grafik Pertumbuhan Tinggi Badan")
-            startActivity(intent)
+            if (!isFinishing && !isDestroyed) {
+                val intent = Intent(this, ImageViewerActivity::class.java)
+                intent.putExtra("image_url", growthChartUrl)
+                intent.putExtra("image_title", "Grafik Pertumbuhan Tinggi Badan")
+                startActivity(intent)
+            }
         }
 
         imgChartBB.setOnClickListener {
-            val intent = Intent(this, ImageViewerActivity::class.java)
-            intent.putExtra("image_url", zscoreChartUrl)
-            intent.putExtra("image_title", "Grafik Pertumbuhan Berat Badan")
-            startActivity(intent)
+            if (!isFinishing && !isDestroyed) {
+                val intent = Intent(this, ImageViewerActivity::class.java)
+                intent.putExtra("image_url", zscoreChartUrl)
+                intent.putExtra("image_title", "Grafik Pertumbuhan Berat Badan")
+                startActivity(intent)
+            }
         }
 
         // Load Growth Chart (Tinggi Badan)
-        Glide.with(this)
-            .load(growthChartUrl)
-            .skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .placeholder(R.drawable.img_dummy_chart)
-            .error(R.drawable.img_dummy_chart)
-            .into(imgChartTB)
+        try {
+            Glide.with(this)
+                .load(growthChartUrl)
+                .skipMemoryCache(true)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .placeholder(R.drawable.img_dummy_chart)
+                .error(R.drawable.img_dummy_chart)
+                .into(imgChartTB)
+        } catch (e: Exception) {
+            Log.e("MAIN_CHART", "Failed to load growth chart", e)
+        }
 
         // Load Z-Score Chart (Berat Badan)
-        Glide.with(this)
-            .load(zscoreChartUrl)
-            .skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .placeholder(R.drawable.img_dummy_chart)
-            .error(R.drawable.img_dummy_chart)
-            .into(imgChartBB)
+        try {
+            Glide.with(this)
+                .load(zscoreChartUrl)
+                .skipMemoryCache(true)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .placeholder(R.drawable.img_dummy_chart)
+                .error(R.drawable.img_dummy_chart)
+                .into(imgChartBB)
+        } catch (e: Exception) {
+            Log.e("MAIN_CHART", "Failed to load zscore chart", e)
+        }
     }
 }
 
