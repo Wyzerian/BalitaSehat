@@ -4,9 +4,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.bootcamp.balitasehat.network.ApiClient
 import com.bootcamp.balitasehat.model.AddMeasurementResponse
+import com.bootcamp.balitasehat.model.HistoryResponse
+import com.bootcamp.balitasehat.network.ApiClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -17,36 +19,58 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // ===== HEADER (STATIC) =====
+        // ===== HEADER =====
         val tvAppName = findViewById<TextView>(R.id.tvNamaAnak)
         val tvSubtitle = findViewById<TextView>(R.id.tvSubtitle)
 
         tvAppName.text = "Balita Sehat"
         tvSubtitle.text = "Prediksi Stunting Balita Sehat"
 
-        // ===== CARD PROFIL ANAK =====
+        // ===== VIEW CARD =====
         val tvNamaCard = findViewById<TextView>(R.id.tvNamaCard)
         val tvBerat = findViewById<TextView>(R.id.tvBB)
         val tvTinggi = findViewById<TextView>(R.id.tvTB)
 
-        // ===== RIWAYAT TERAKHIR =====
         val tvLastDate = findViewById<TextView>(R.id.tvLastDate)
         val tvLastDetail = findViewById<TextView>(R.id.tvLastDetail)
         val tvLastStatus = findViewById<TextView>(R.id.tvLastStatus)
 
-        // ===== DATA DARI LOGIN =====
+        // ===== SHARED PREF =====
+        val prefs = getSharedPreferences("USER", MODE_PRIVATE)
+
+        // ===== AMBIL DATA DARI INTENT =====
+        val nikFromIntent = intent.getStringExtra("nik_anak")
         val childId = intent.getStringExtra("child_id")
-        val namaAnak = intent.getStringExtra("nama") ?: "-"
+        val namaAnak = intent.getStringExtra("nama")
 
-        tvNamaCard.text = namaAnak
+        // ===== SIMPAN KE PREF JIKA ADA =====
+        if (!nikFromIntent.isNullOrEmpty()) {
+            prefs.edit().putString("nik_anak", nikFromIntent).apply()
+        }
+        if (!childId.isNullOrEmpty()) {
+            prefs.edit().putString("child_id", childId).apply()
+        }
+        if (!namaAnak.isNullOrEmpty()) {
+            prefs.edit().putString("nama", namaAnak).apply()
+        }
 
-        // ===== DEFAULT (BELUM ADA DATA) =====
+        // ===== AMBIL DARI PREF (SUMBER UTAMA) =====
+        val nikAnak = prefs.getString("nik_anak", null)
+        val childIdFinal = prefs.getString("child_id", null)
+        val namaFinal = prefs.getString("nama", "-")
+
+        Log.d("MAIN_ACTIVITY", "NIK: $nikAnak | childId: $childIdFinal")
+
+        // ===== SET NAMA =====
+        tvNamaCard.text = namaFinal
+
+        // ===== DEFAULT =====
         setDefaultMeasurement(tvBerat, tvTinggi, tvLastDate, tvLastDetail, tvLastStatus)
 
-        // ===== LOAD MEASUREMENT TERAKHIR =====
-        if (!childId.isNullOrEmpty()) {
+        // ===== LOAD DATA TERAKHIR =====
+        if (!childIdFinal.isNullOrEmpty()) {
             loadLatestMeasurement(
-                childId,
+                childIdFinal,
                 tvBerat,
                 tvTinggi,
                 tvLastDate,
@@ -55,11 +79,25 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        // ===== BOTTOM NAV =====
+        // ===== NAV INPUT =====
         findViewById<TextView>(R.id.navInput).setOnClickListener {
-            startActivity(Intent(this, InputData::class.java))
+
+            if (nikAnak.isNullOrEmpty()) {
+                Toast.makeText(
+                    this,
+                    "NIK anak tidak ditemukan, silakan login ulang",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
+            val intent = Intent(this, InputData::class.java)
+            intent.putExtra("nik_anak", nikAnak)      // ⭐ WAJIB
+            intent.putExtra("nama_anak", namaAnak)    // ⭐ TAMBAHKAN INI
+            startActivity(intent)
         }
 
+        // ===== NAV HISTORY =====
         findViewById<TextView>(R.id.navHistory).setOnClickListener {
             startActivity(Intent(this, HistoryActivity::class.java))
         }
@@ -74,7 +112,6 @@ class MainActivity : AppCompatActivity() {
     ) {
         tvBerat.text = "Berat Badan (kg)\n0"
         tvTinggi.text = "Tinggi Badan (cm)\n0"
-
         tvLastDate.text = "Belum ada pemeriksaan"
         tvLastDetail.text = "-"
         tvLastStatus.text = "Status: -"
@@ -89,36 +126,45 @@ class MainActivity : AppCompatActivity() {
         tvLastDetail: TextView,
         tvLastStatus: TextView
     ) {
-        ApiClient.apiService.getLatestMeasurement(childId)
-            .enqueue(object : Callback<AddMeasurementResponse> {
+        ApiClient.apiService.getChildHistory(childId)
+            .enqueue(object : Callback<HistoryResponse> {
 
                 override fun onResponse(
-                    call: Call<AddMeasurementResponse>,
-                    response: Response<AddMeasurementResponse>
+                    call: Call<HistoryResponse>,
+                    response: Response<HistoryResponse>
                 ) {
-                    val data = response.body()?.data
-                    if (!response.isSuccessful || data == null) return
+                    val list = response.body()?.data
+                    if (list.isNullOrEmpty()) return
 
-                    tvBerat.text = "Berat Badan (kg)\n${data.weightKg}"
-                    tvTinggi.text = "Tinggi Badan (cm)\n${data.heightCm}"
+                    // 🔥 DATA TERAKHIR
+                    val latest = list.last()
 
-                    tvLastDate.text = "Tanggal: ${data.measurementId}" // ganti jika API punya date
+                    tvBerat.text = "Berat Badan (kg)\n${latest.weightKg}"
+                    tvTinggi.text = "Tinggi Badan (cm)\n${latest.heightCm}"
+
+                    tvLastDate.text = "Tanggal: ${latest.measurementDate}"
                     tvLastDetail.text =
-                        "Umur: ${data.ageMonths} bln | TB: ${data.heightCm} cm | BB: ${data.weightKg} kg"
+                        "Umur: ${latest.ageMonths} bln | TB: ${latest.heightCm} cm | BB: ${latest.weightKg} kg"
 
-                    val status = data.classification.heightStatus
+                    val status = latest.stuntingStatus
                     tvLastStatus.text = "Status: $status"
 
                     when (status) {
-                        "Normal" -> tvLastStatus.setTextColor(getColor(R.color.green_status))
-                        "Berisiko Stunting" -> tvLastStatus.setTextColor(getColor(R.color.yellow_status))
-                        "Stunting" -> tvLastStatus.setTextColor(getColor(R.color.red_status))
+                        "Normal" ->
+                            tvLastStatus.setTextColor(getColor(R.color.green_status))
+                        "At Risk" ->
+                            tvLastStatus.setTextColor(getColor(R.color.yellow_status))
+                        "Stunted" ->
+                            tvLastStatus.setTextColor(getColor(R.color.red_status))
+                        else ->
+                            tvLastStatus.setTextColor(getColor(android.R.color.darker_gray))
                     }
                 }
 
-                override fun onFailure(call: Call<AddMeasurementResponse>, t: Throwable) {
-                    Log.e("MAIN_ACTIVITY", "Load measurement failed", t)
+                override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
+                    Log.e("MAIN_ACTIVITY", "Load history failed", t)
                 }
             })
     }
 }
+

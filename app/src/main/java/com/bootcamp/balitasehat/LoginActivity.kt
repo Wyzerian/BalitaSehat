@@ -55,7 +55,7 @@ class LoginActivity : AppCompatActivity() {
                             ).show()
 
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                            intent.putExtra("nik", result.data?.nikAnak)
+                            intent.putExtra("nik_anak", result.data?.nikAnak)
                             intent.putExtra("nama", result.data?.name)
                             intent.putExtra("gender", result.data?.gender)
                             intent.putExtra("birth_date", result.data?.birthDate)
