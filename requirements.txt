@@ -1,0 +1,32 @@
+# Python Dependencies untuk Backend API
+# Install dengan: pip install -r requirements.txt
+
+# Web Framework
+flask==3.1.2
+flask-cors==6.0.2
+
+# Data Processing
+pandas==2.3.3
+numpy==2.4.0
+
+# Excel Support (untuk konversi WHO data)
+openpyxl==3.1.5
+
+# Progress Bar (untuk validasi)
+tqdm==4.67.1
+
+# Visualization (optional - untuk generate grafik)
+matplotlib==3.10.8
+
+# MySQL Database Connector
+mysql-connector-python==9.5.0
+
+# Testing
+requests==2.32.5
+
+# Database (optional - jika pakai SQLAlchemy)
+# sqlalchemy==2.0.23
+# pymysql==1.1.0
+
+# Production Server (optional - untuk deployment)
+# gunicorn==21.2.0

@@ -1,0 +1,458 @@
+"""
+REST API untuk Integrasi dengan Mobile App
+Menggunakan Flask (lightweight dan mudah di-deploy)
+"""
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import pandas as pd
+from datetime import datetime
+import os
+
+# Import classifier dan tracker
+from who_classifier import WHOClassifier
+from growth_tracker import GrowthTracker
+
+# Inisialisasi Flask
+app = Flask(__name__)
+CORS(app)  # Enable CORS untuk mobile app
+
+# Inisialisasi WHO Classifier (load saat startup)
+print("Initializing WHO Classifier...")
+classifier = WHOClassifier(
+    who_boys_height_path='data/WHO Indicators Boys 2 years_Tinggi.csv',
+    who_girls_height_path='data/WHO Indicators Girls 2 years_Tinggi.csv',
+    who_boys_weight_path='data/WHO Indicators Boys 2 years_Berat.csv',
+    who_girls_weight_path='data/WHO Indicators Girls 2 years_Berat.csv'
+)
+
+# Inisialisasi Growth Tracker
+tracker = GrowthTracker(classifier)
+
+print("✓ Server ready!")
+
+
+# ============================================================================
+# ENDPOINT 1: Health Check
+# ============================================================================
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """
+    Cek status server
+    
+    GET /api/health
+    """
+    return jsonify({
+        'status': 'healthy',
+        'message': 'BalitaSehat API is running',
+        'version': '1.0.0'
+    })
+
+
+# ============================================================================
+# ENDPOINT 2: Klasifikasi Single Measurement
+# ============================================================================
+@app.route('/api/classify', methods=['POST'])
+def classify_measurement():
+    """
+    Klasifikasi status gizi anak berdasarkan input
+    
+    POST /api/classify
+    Body:
+    {
+        "gender": "Laki-laki",
+        "age_months": 12,
+        "height_cm": 75.5,
+        "weight_kg": 9.2
+    }
+    
+    Response:
+    {
+        "status": "success",
+        "data": {
+            "zscore_height": -0.1,
+            "zscore_weight": -0.43,
+            "stunting_status": "Normal",
+            "wasting_status": "Normal weight",
+            "risk_alert": {...}
+        }
+    }
+    """
+    try:
+        data = request.json
+        
+        # Validasi input
+        required_fields = ['gender', 'age_months', 'height_cm', 'weight_kg']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Missing required field: {field}'
+                }), 400
+        
+        # Klasifikasi
+        result = classifier.classify(
+            gender=data['gender'],
+            age_months=int(data['age_months']),
+            height_cm=float(data['height_cm']),
+            weight_kg=float(data['weight_kg'])
+        )
+        
+        if result['status'] == 'error':
+            return jsonify({
+                'status': 'error',
+                'message': result['message']
+            }), 400
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'gender': result['gender'],
+                'age_months': result['age_months'],
+                'height_cm': result['height_cm'],
+                'weight_kg': result['weight_kg'],
+                'zscore_height': result['zscore_height'],
+                'zscore_weight': result['zscore_weight'],
+                'stunting_status': result['stunting_status'],
+                'wasting_status': result['wasting_status'],
+                'risk_alert': result['risk_alert']
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINT 3: Add Measurement untuk Tracking
+# ============================================================================
+@app.route('/api/child/measurement', methods=['POST'])
+def add_child_measurement():
+    """
+    Tambahkan data pengukuran anak (untuk tracking)
+    
+    POST /api/child/measurement
+    Body:
+    {
+        "child_id": "ANAK001",
+        "name": "Budi",
+        "gender": "Laki-laki",
+        "age_months": 12,
+        "height_cm": 75.5,
+        "weight_kg": 9.2,
+        "measurement_date": "2025-12-23"  (optional)
+    }
+    
+    Response:
+    {
+        "status": "success",
+        "data": {
+            "measurement": {...},
+            "trend_analysis": {...}  (jika ada data sebelumnya)
+        }
+    }
+    """
+    try:
+        data = request.json
+        
+        # Validasi input
+        required_fields = ['child_id', 'name', 'gender', 'age_months', 'height_cm', 'weight_kg']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Missing required field: {field}'
+                }), 400
+        
+        # Parse measurement_date jika ada
+        measurement_date = None
+        if 'measurement_date' in data:
+            measurement_date = datetime.fromisoformat(data['measurement_date'])
+        
+        # Add measurement
+        result = tracker.add_measurement(
+            child_id=data['child_id'],
+            name=data['name'],
+            gender=data['gender'],
+            age_months=int(data['age_months']),
+            height_cm=float(data['height_cm']),
+            weight_kg=float(data['weight_kg']),
+            measurement_date=measurement_date
+        )
+        
+        if result['status'] == 'error':
+            return jsonify({
+                'status': 'error',
+                'message': result['message']
+            }), 400
+        
+        # Prepare response
+        response_data = {
+            'measurement': {
+                'child_id': result['child_id'],
+                'name': result['name'],
+                'gender': result['gender'],
+                'age_months': result['age_months'],
+                'height_cm': result['height_cm'],
+                'weight_kg': result['weight_kg'],
+                'zscore_height': result['zscore_height'],
+                'zscore_weight': result['zscore_weight'],
+                'stunting_status': result['stunting_status'],
+                'wasting_status': result['wasting_status'],
+                'risk_alert': result['risk_alert']
+            }
+        }
+        
+        # Tambahkan trend analysis jika ada
+        if 'trend_analysis' in result:
+            response_data['trend_analysis'] = result['trend_analysis']
+        
+        return jsonify({
+            'status': 'success',
+            'data': response_data
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINT 4: Get Child History
+# ============================================================================
+@app.route('/api/child/<child_id>/history', methods=['GET'])
+def get_child_history(child_id):
+    """
+    Ambil riwayat pengukuran anak
+    
+    GET /api/child/ANAK001/history
+    
+    Response:
+    {
+        "status": "success",
+        "data": {
+            "child_id": "ANAK001",
+            "name": "Budi",
+            "gender": "Laki-laki",
+            "measurements": [...]
+        }
+    }
+    """
+    try:
+        history = tracker.get_child_history(child_id)
+        
+        if history is None:
+            return jsonify({
+                'status': 'error',
+                'message': f'Child with ID {child_id} not found'
+            }), 404
+        
+        child_data = tracker.children_data[child_id]
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'child_id': child_id,
+                'name': child_data['name'],
+                'gender': child_data['gender'],
+                'total_measurements': len(history),
+                'measurements': history.to_dict('records')
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINT 5: Get Trend Analysis & Early Warning
+# ============================================================================
+@app.route('/api/child/<child_id>/analysis', methods=['GET'])
+def get_trend_analysis(child_id):
+    """
+    Ambil analisis trend dan early warning
+    
+    GET /api/child/ANAK001/analysis
+    
+    Response:
+    {
+        "status": "success",
+        "data": {
+            "child_id": "ANAK001",
+            "trend": {...},
+            "prediction": {...},
+            "risks": [...]
+        }
+    }
+    """
+    try:
+        if child_id not in tracker.children_data:
+            return jsonify({
+                'status': 'error',
+                'message': f'Child with ID {child_id} not found'
+            }), 404
+        
+        trend = tracker.analyze_trend(child_id)
+        
+        if trend['status'] == 'insufficient_data':
+            return jsonify({
+                'status': 'error',
+                'message': trend['message']
+            }), 400
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'child_id': child_id,
+                'measurements_count': trend['measurements_count'],
+                'age_range': trend['age_range'],
+                'height_trend': trend['height_trend'],
+                'weight_trend': trend['weight_trend'],
+                'height_zscore_change': trend['height_zscore_change'],
+                'weight_zscore_change': trend['weight_zscore_change'],
+                'prediction': trend['prediction'],
+                'risks': trend['risks'],
+                'has_risk': trend['has_risk']
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINT 6: Get All Children Summary
+# ============================================================================
+@app.route('/api/children', methods=['GET'])
+def get_all_children():
+    """
+    Ambil ringkasan semua anak yang ditrack
+    
+    GET /api/children
+    
+    Response:
+    {
+        "status": "success",
+        "data": {
+            "total_children": 5,
+            "children": [...]
+        }
+    }
+    """
+    try:
+        summary = tracker.get_all_children_summary()
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'total_children': len(summary),
+                'children': summary.to_dict('records') if len(summary) > 0 else []
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINT 7: Get WHO Thresholds (untuk referensi di mobile)
+# ============================================================================
+@app.route('/api/who/thresholds', methods=['GET'])
+def get_who_thresholds():
+    """
+    Ambil threshold WHO untuk umur tertentu
+    
+    GET /api/who/thresholds?gender=Laki-laki&age_months=12
+    
+    Response:
+    {
+        "status": "success",
+        "data": {
+            "height": {
+                "SD3neg": 68.6,
+                "SD2neg": 71.0,
+                "SD1neg": 73.4,
+                "SD0": 75.7,
+                ...
+            },
+            "weight": {...}
+        }
+    }
+    """
+    try:
+        gender = request.args.get('gender', 'Laki-laki')
+        age_months = int(request.args.get('age_months', 12))
+        
+        # Load WHO data
+        if gender.lower() in ['laki-laki', 'laki', 'male']:
+            who_height = pd.read_csv('data/WHO Indicators Boys 2 years_Tinggi.csv')
+            who_weight = pd.read_csv('data/WHO Indicators Boys 2 years_Berat.csv')
+        else:
+            who_height = pd.read_csv('data/WHO Indicators Girls 2 years_Tinggi.csv')
+            who_weight = pd.read_csv('data/WHO Indicators Girls 2 years_Berat.csv')
+        
+        row_h = who_height[who_height['Month'] == age_months]
+        row_w = who_weight[who_weight['Month'] == age_months]
+        
+        if row_h.empty or row_w.empty:
+            return jsonify({
+                'status': 'error',
+                'message': f'No WHO data available for age {age_months} months'
+            }), 404
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'gender': gender,
+                'age_months': age_months,
+                'height': {
+                    'SD3neg': float(row_h['SD3neg'].iloc[0]),
+                    'SD2neg': float(row_h['SD2neg'].iloc[0]),
+                    'SD1neg': float(row_h['SD1neg'].iloc[0]),
+                    'SD0': float(row_h['SD0'].iloc[0]),
+                    'SD1': float(row_h['SD1'].iloc[0]),
+                    'SD2': float(row_h['SD2'].iloc[0]),
+                    'SD3': float(row_h['SD3'].iloc[0])
+                },
+                'weight': {
+                    'SD3neg': float(row_w['SD3neg'].iloc[0]),
+                    'SD2neg': float(row_w['SD2neg'].iloc[0]),
+                    'SD1neg': float(row_w['SD1neg'].iloc[0]),
+                    'SD0': float(row_w['SD0'].iloc[0]),
+                    'SD1': float(row_w['SD1'].iloc[0]),
+                    'SD2': float(row_w['SD2'].iloc[0]),
+                    'SD3': float(row_w['SD3'].iloc[0])
+                }
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+# ============================================================================
+# Main
+# ============================================================================
+if __name__ == '__main__':
+    # Untuk development
+    app.run(host='0.0.0.0', port=5000, debug=True)
+    
+    # Untuk production, gunakan gunicorn:
+    # gunicorn -w 4 -b 0.0.0.0:5000 api_server:app
