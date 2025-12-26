@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.bootcamp.balitasehat.model.HistoryResponse
 import com.bootcamp.balitasehat.network.ApiClient
+import com.bootcamp.balitasehat.utils.StatusUtils
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import retrofit2.Call
@@ -31,14 +32,19 @@ class ResultActivity : AppCompatActivity() {
         val imgGrowth = findViewById<ImageView>(R.id.imgGrowthChart)
         val imgZscore = findViewById<ImageView>(R.id.imgZscoreChart)
 
-        // ===== DATA DARI INPUTDATA =====
+        // ===== DATA DARI INTENT =====
         val nama = intent.getStringExtra("nama") ?: "-"
         val umur = intent.getIntExtra("age_months", 0)
         val tinggi = intent.getDoubleExtra("height_cm", 0.0)
         val berat = intent.getDoubleExtra("weight_kg", 0.0)
         val tanggal = intent.getStringExtra("measurement_date") ?: "-"
 
-        var status: String? = null
+        // ===== Z-SCORE DAN CLASSIFICATION DARI INTENT =====
+        val heightZscore = intent.getDoubleExtra("height_zscore", 0.0)
+        val weightZscore = intent.getDoubleExtra("weight_zscore", 0.0)
+        val classificationHeight = intent.getStringExtra("classification_height")
+        val classificationWeight = intent.getStringExtra("classification_weight")
+        val riskLevel = intent.getStringExtra("risk_level")
 
         // ===== SET TEXT =====
         tvNama.text = nama
@@ -46,8 +52,60 @@ class ResultActivity : AppCompatActivity() {
         tvTinggi.text = "Tinggi : $tinggi cm"
         tvBerat.text = "Berat : $berat kg"
         tvTanggal.text = "Tanggal : $tanggal"
-        tvStatus.text = "Status : -"
-        tvStatus.setTextColor(getColor(android.R.color.darker_gray))
+
+        // ===== SET Z-SCORE DAN STATUS =====
+        if (heightZscore != 0.0 || weightZscore != 0.0) {
+            val zTbText = if (heightZscore.isFinite()) "%.2f".format(heightZscore) else "-"
+            val zBbText = if (weightZscore.isFinite()) "%.2f".format(weightZscore) else "-"
+
+            tvZScore.text = """
+                Z-Score TB/U : $zTbText
+                Z-Score BB/U : $zBbText
+            """.trimIndent()
+
+            // ✅ GUNAKAN CLASSIFICATION BARU
+            if (!classificationHeight.isNullOrEmpty() && !classificationWeight.isNullOrEmpty()) {
+                val statusText = """
+                    TB: $classificationHeight
+                    BB: $classificationWeight
+                    Risk Level: ${riskLevel ?: "Unknown"}
+                """.trimIndent()
+
+                tvStatus.text = "Status : $statusText"
+
+                // Gunakan warna berdasarkan kombinasi height dan weight
+                val statusColor = StatusUtils.getCombinedStatusColor(
+                    this,
+                    classificationHeight,
+                    classificationWeight
+                )
+                tvStatus.setTextColor(statusColor)
+
+                Log.d("RESULT_DEBUG", "Classification - TB: $classificationHeight, BB: $classificationWeight, Risk: $riskLevel")
+            } else {
+                // Fallback ke sistem lama
+                val statusText = when {
+                    heightZscore <= -3 -> "Stunting"
+                    heightZscore <= -1 -> "Berisiko Stunting"
+                    else -> "Normal"
+                }
+
+                tvStatus.text = "Status : $statusText"
+
+                when (statusText) {
+                    "Normal" -> tvStatus.setTextColor(getColor(R.color.green_status))
+                    "Berisiko Stunting" -> tvStatus.setTextColor(getColor(R.color.yellow_status))
+                    "Stunting" -> tvStatus.setTextColor(getColor(R.color.red_status))
+                    else -> tvStatus.setTextColor(getColor(android.R.color.darker_gray))
+                }
+
+                Log.d("RESULT_DEBUG", "Fallback Status - Z-Score TB: $zTbText, BB: $zBbText, Status: $statusText")
+            }
+        } else {
+            tvStatus.text = "Status : -"
+            tvStatus.setTextColor(getColor(android.R.color.darker_gray))
+            tvZScore.text = "Memuat Z-Score..."
+        }
 
         // ===== AMBIL CHILD ID =====
         val childId = intent.getStringExtra("child_id")
@@ -84,47 +142,87 @@ class ResultActivity : AppCompatActivity() {
                 .into(imgGrowth)
         }, 1500)
 
-        ApiClient.apiService.getChildHistory(childId)
-            .enqueue(object : Callback<HistoryResponse> {
-                override fun onResponse(
-                    call: Call<HistoryResponse>,
-                    response: Response<HistoryResponse> ) {
-                    val body = response.body()
-                    if (body == null || body.data.isEmpty()) return
+        // ===== FALLBACK: Load dari API jika Intent data kosong =====
+        if (heightZscore == 0.0 && weightZscore == 0.0) {
+            Log.d("RESULT_DEBUG", "Z-Score dari Intent kosong, load dari API...")
 
-                    val latest = body.data.maxByOrNull { it.measurementDate } ?: return
-
-                    val zTb = latest.zscoreHeight
-
-                    val zBb = latest.zscoreWeight
-                    val zTbText = if (zTb.isFinite()) "%.2f".format(zTb) else "-"
-                    val zBbText = if (zBb.isFinite()) "%.2f".format(zBb) else "-"
-
-                    runOnUiThread { tvZScore.text = """ 
-                        Z-Score TB/U : $zTbText 
-                        Z-Score BB/U : $zBbText 
-                        """.trimIndent()
-
-                        val statusText = when {
-                            zTb <= -3 -> "Stunting"
-                            zTb <= -1 -> "Berisiko Stunting"
-                            else -> "Normal"
+            ApiClient.apiService.getChildHistory(childId)
+                .enqueue(object : Callback<HistoryResponse> {
+                    override fun onResponse(
+                        call: Call<HistoryResponse>,
+                        response: Response<HistoryResponse>
+                    ) {
+                        val body = response.body()
+                        if (body == null || body.data.isEmpty()) {
+                            Log.e("RESULT_DEBUG", "API response kosong")
+                            return
                         }
 
-                        tvStatus.text = "Status : $statusText"
+                        val latest = body.data.maxByOrNull { it.measurementDate } ?: return
 
-                        when (statusText) {
-                            "Normal" -> tvStatus.setTextColor(getColor(R.color.green_status))
-                            "At Risk" -> tvStatus.setTextColor(getColor(R.color.yellow_status))
-                            "Stunted" -> tvStatus.setTextColor(getColor(R.color.red_status))
-                            else -> tvStatus.setTextColor(getColor(android.R.color.darker_gray))
+                        val zTb = latest.zscoreHeight
+                        val zBb = latest.zscoreWeight
+                        val zTbText = if (zTb.isFinite()) "%.2f".format(zTb) else "-"
+                        val zBbText = if (zBb.isFinite()) "%.2f".format(zBb) else "-"
+
+                        runOnUiThread {
+                            tvZScore.text = """
+                                Z-Score TB/U : $zTbText
+                                Z-Score BB/U : $zBbText
+                            """.trimIndent()
+
+                            // ✅ GUNAKAN CLASSIFICATION DARI API
+                            if (!latest.classificationHeight.isNullOrEmpty() &&
+                                !latest.classificationWeight.isNullOrEmpty()) {
+
+                                val statusText = """
+                                    TB: ${latest.classificationHeight}
+                                    BB: ${latest.classificationWeight}
+                                    Risk Level: ${latest.riskLevel ?: "Unknown"}
+                                """.trimIndent()
+
+                                tvStatus.text = "Status : $statusText"
+
+                                val statusColor = StatusUtils.getCombinedStatusColor(
+                                    this@ResultActivity,
+                                    latest.classificationHeight,
+                                    latest.classificationWeight
+                                )
+                                tvStatus.setTextColor(statusColor)
+
+                                Log.d("RESULT_DEBUG", "API Classification - TB: ${latest.classificationHeight}, BB: ${latest.classificationWeight}")
+                            } else {
+                                // Fallback ke sistem lama
+                                val statusText = when {
+                                    zTb <= -3 -> "Stunting"
+                                    zTb <= -1 -> "Berisiko Stunting"
+                                    else -> "Normal"
+                                }
+
+                                tvStatus.text = "Status : $statusText"
+
+                                when (statusText) {
+                                    "Normal" -> tvStatus.setTextColor(getColor(R.color.green_status))
+                                    "Berisiko Stunting" -> tvStatus.setTextColor(getColor(R.color.yellow_status))
+                                    "Stunting" -> tvStatus.setTextColor(getColor(R.color.red_status))
+                                    else -> tvStatus.setTextColor(getColor(android.R.color.darker_gray))
+                                }
+
+                                Log.d("RESULT_DEBUG", "API Fallback - Z-Score TB: $zTbText, BB: $zBbText, Status: $statusText")
+                            }
                         }
                     }
-                }
-                override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
-                    Log.e("RESULT", "Gagal ambil history", t)
-                }
-            })
+
+                    override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
+                        Log.e("RESULT", "Gagal ambil history", t)
+                        runOnUiThread {
+                            tvZScore.text = "Gagal memuat Z-Score"
+                        }
+                    }
+                })
+        } else {
+            Log.d("RESULT_DEBUG", "Menggunakan Z-Score dari Intent (tidak perlu API)")
+        }
     }
 
     private fun loadZScoreChartWithRetry(

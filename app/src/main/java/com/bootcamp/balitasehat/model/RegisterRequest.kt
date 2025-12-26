@@ -13,7 +13,7 @@ data class CheckNikResponse(
 )
 
 data class ChildData(
-    @SerializedName("child_id") val childId: String,
+    @SerializedName("id") val childId: String?,           // Backend uses "id" not "child_id"
     @SerializedName("nik_anak") val nikAnak: String,
     @SerializedName("name") val name: String,
     @SerializedName("gender") val gender: String,
@@ -22,9 +22,11 @@ data class ChildData(
 )
 
 data class ChildResult(
-    @SerializedName("child_id") val childId: String,
+    @SerializedName("child_id") val childId: String?,  // ✅ Backend uses "child_id" in addMeasurement
     @SerializedName("name") val name: String,
-    @SerializedName("age_months") val ageMonths: Int
+    @SerializedName("age_months") val ageMonths: Int,
+    @SerializedName("gender") val gender: String? = null,
+    @SerializedName("nik_anak") val nikAnak: String? = null
 )
 
 // ============================================================================
@@ -116,6 +118,11 @@ data class HistoryItem(
     @SerializedName("zscore_height") val zscoreHeight: Double,
     @SerializedName("zscore_weight") val zscoreWeight: Double,
 
-    @SerializedName("stunting_status") val stuntingStatus: String?,
-    @SerializedName("wasting_status") val wastingStatus: String
+    @SerializedName("classification_height") val classificationHeight: String? = null,
+    @SerializedName("classification_weight") val classificationWeight: String? = null,
+    @SerializedName("risk_level") val riskLevel: String? = null,
+
+    // ⚠️ Deprecated fields (for backward compatibility)
+    @SerializedName("stunting_status") val stuntingStatus: String? = null,
+    @SerializedName("wasting_status") val wastingStatus: String? = null
 )

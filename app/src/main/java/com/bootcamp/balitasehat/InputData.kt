@@ -87,7 +87,21 @@ class InputData : AppCompatActivity() {
                         call: Call<AddMeasurementResponse>,
                         response: Response<AddMeasurementResponse>
                     ) {
+                        Log.d("INPUT_DATA", "=== API RESPONSE ===")
+                        Log.d("INPUT_DATA", "Response Code: ${response.code()}")
+
+                        if (!response.isSuccessful) {
+                            Log.e("INPUT_DATA", "API Error: ${response.code()}")
+                            Toast.makeText(
+                                this@InputData,
+                                "Gagal memproses data (Error ${response.code()})",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return
+                        }
+
                         val result = response.body()?.data ?: run {
+                            Log.e("INPUT_DATA", "Response body atau data is null")
                             Toast.makeText(
                                 this@InputData,
                                 "Gagal memproses data",
@@ -96,13 +110,34 @@ class InputData : AppCompatActivity() {
                             return
                         }
 
+                        Log.d("INPUT_DATA", "=== CHILD DATA ===")
+                        Log.d("INPUT_DATA", "child.childId: ${result.child.childId}")
+                        Log.d("INPUT_DATA", "child.name: ${result.child.name}")
+                        Log.d("INPUT_DATA", "child.ageMonths: ${result.child.ageMonths}")
+
                         val childId = result.child.childId
 
+                        if (childId.isNullOrEmpty()) {
+                            Log.e("INPUT_DATA", "⚠️ child_id is NULL or EMPTY!")
+                            Toast.makeText(
+                                this@InputData,
+                                "Error: child_id tidak ditemukan dari server",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            return
+                        }
+
+                        Log.d("INPUT_DATA", "=== MEASUREMENT RESULT ===")
+                        Log.d("INPUT_DATA", "child_id: $childId")
+                        Log.d("INPUT_DATA", "height_zscore: ${result.classification.heightZscore}")
+                        Log.d("INPUT_DATA", "weight_zscore: ${result.classification.weightZscore}")
+
                         // 🔄 TRIGGER GENERATE CHART (NON-BLOCKING)
+                        Log.d("INPUT_DATA", "Starting chart generation for child_id: $childId")
                         ApiClient.apiService.generateChart(childId, "growth")
-                            .enqueue(SimpleCallback())
+                            .enqueue(SimpleCallback("growth"))
                         ApiClient.apiService.generateChart(childId, "zscore")
-                            .enqueue(SimpleCallback())
+                            .enqueue(SimpleCallback("zscore"))
 
                         // 🔀 PINDAH KE RESULT
                         val intent = Intent(this@InputData, ResultActivity::class.java)
@@ -120,8 +155,8 @@ class InputData : AppCompatActivity() {
                         // ===== CLASSIFICATION (HASIL BACKEND) =====
                         intent.putExtra("height_zscore", result.classification.heightZscore)
                         intent.putExtra("weight_zscore", result.classification.weightZscore)
-                        intent.putExtra("height_status", result.classification.classificationHeight)
-                        intent.putExtra("weight_status", result.classification.classificationWeight)
+                        intent.putExtra("classification_height", result.classification.classificationHeight)
+                        intent.putExtra("classification_weight", result.classification.classificationWeight)
                         intent.putExtra("risk_level", result.classification.riskLevel)
 
                         // ===== CHART URL (STATIC FILE) =====
@@ -158,12 +193,16 @@ class InputData : AppCompatActivity() {
 }
 
 // ===== SIMPLE CALLBACK UNTUK GENERATE CHART =====
-class SimpleCallback : Callback<Void> {
+class SimpleCallback(private val chartType: String = "unknown") : Callback<Void> {
     override fun onResponse(call: Call<Void>, response: Response<Void>) {
-        Log.d("CHART", "Chart generated")
+        if (response.isSuccessful) {
+            Log.d("CHART", "✅ Chart $chartType generated successfully")
+        } else {
+            Log.e("CHART", "❌ Chart $chartType generation failed: ${response.code()}")
+        }
     }
 
     override fun onFailure(call: Call<Void>, t: Throwable) {
-        Log.e("CHART", "Generate chart gagal", t)
+        Log.e("CHART", "❌ Generate chart $chartType gagal", t)
     }
 }

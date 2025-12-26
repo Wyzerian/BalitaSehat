@@ -2,9 +2,13 @@
 <resources>
     <color name="purple_200">#BB86FC</color>
     <color name="purple_500">#6200EE</color>
-    <color name="green_status">#4CAF50</color>
-    <color name="yellow_status">#FFC107</color>
-    <color name="red_status">#F44336</color>
+
+    <!-- Status Colors -->
+    <color name="green_status">#4CAF50</color>      <!-- Good/Normal: Hijau cerah -->
+    <color name="yellow_status">#FFC107</color>     <!-- Warning: Kuning -->
+    <color name="orange_status">#FF9800</color>     <!-- High Risk: Orange -->
+    <color name="red_status">#F44336</color>        <!-- Danger: Merah -->
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="light_grey">#AFAFAF</color>
