@@ -3,6 +3,7 @@ package com.bootcamp.balitasehat
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -24,6 +25,11 @@ class HistoryActivity : AppCompatActivity() {
 
         try {
             setContentView(R.layout.activity_history)
+
+            // ===== TOMBOL BACK =====
+            findViewById<ImageView>(R.id.btnBack).setOnClickListener {
+                finish()
+            }
 
             val rvHistory = findViewById<RecyclerView>(R.id.rvHistory)
             val tvEmpty = findViewById<TextView>(R.id.tvEmpty)

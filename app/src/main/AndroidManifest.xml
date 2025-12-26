@@ -20,10 +20,14 @@
         <activity android:name=".ResultActivity" />
         <activity android:name=".MainActivity" />
         <activity android:name=".RegisterActivity" />
+        <activity
+            android:name=".ImageViewerActivity"
+            android:theme="@style/Theme.ImageViewer" />
 
         <activity
             android:name=".LoginActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

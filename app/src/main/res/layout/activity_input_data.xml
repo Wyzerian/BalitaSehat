@@ -10,6 +10,16 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Tombol Back -->
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Kembali"
+            android:padding="4dp"
+            android:layout_marginBottom="12dp"/>
+
         <!-- Judul -->
         <TextView
             android:text="Input Data Anak"

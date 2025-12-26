@@ -1,5 +1,6 @@
 package com.bootcamp.balitasehat
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.ImageView
@@ -19,6 +20,11 @@ class ResultActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_result)
+
+        // ===== TOMBOL BACK =====
+        findViewById<ImageView>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
 
         // ===== VIEW =====
         val tvNama = findViewById<TextView>(R.id.tvNamaAnak)
@@ -125,6 +131,21 @@ class ResultActivity : AppCompatActivity() {
 
         Log.d("RESULT_DEBUG", "growthUrl = $growthUrl")
         Log.d("RESULT_DEBUG", "zscoreUrl = $zscoreUrl")
+
+        // ===== CLICK LISTENER UNTUK GRAFIK (FULL-SCREEN VIEWER) =====
+        imgGrowth.setOnClickListener {
+            val intent = Intent(this, ImageViewerActivity::class.java)
+            intent.putExtra("image_url", growthUrl)
+            intent.putExtra("image_title", "Grafik Pertumbuhan Tinggi Badan")
+            startActivity(intent)
+        }
+
+        imgZscore.setOnClickListener {
+            val intent = Intent(this, ImageViewerActivity::class.java)
+            intent.putExtra("image_url", zscoreUrl)
+            intent.putExtra("image_title", "Grafik Z-Score Berat Badan")
+            startActivity(intent)
+        }
 
         // ===== LOAD GRAFIK =====
         loadZScoreChartWithRetry(
