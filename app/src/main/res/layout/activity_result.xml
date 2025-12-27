@@ -34,8 +34,16 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:orientation="vertical"
-            android:padding="12dp"
+            android:padding="6dp"
             android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_white"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:layout_marginBottom="1dp">
 
             <TextView
                 android:id="@+id/tvNamaAnak"
@@ -73,6 +81,7 @@
                 android:layout_height="wrap_content"
                 android:text="Tanggal Input : -"
                 android:textColor="@color/black"/>
+            </LinearLayout>
         </LinearLayout>
 
         <!-- ===== STATUS ===== -->

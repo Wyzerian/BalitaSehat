@@ -13,4 +13,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="light_grey">#AFAFAF</color>
     <color name="gray">#858585</color>
+
+    <!-- Button Color -->
+    <color name="button_primary">#3F51B5</color>
 </resources>
